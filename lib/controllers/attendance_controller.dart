@@ -2144,7 +2144,7 @@ class AttendanceController extends GetxController {
       debugPrint('markIn result: $result');
 
       if (result['success'] == true) {
-        AppUtils.showSuccess('Check-in successful!');
+        AppUtils.showSuccess('Mark-in successful!');
         resetScreenState();
         return true;
       } else {
@@ -2208,7 +2208,7 @@ class AttendanceController extends GetxController {
       debugPrint('markOut result: $result');
 
       if (result['success'] == true) {
-        AppUtils.showSuccess('Check-out successful!');
+        AppUtils.showSuccess('Mark-out successful!');
         resetScreenState();
         return true;
       } else {
