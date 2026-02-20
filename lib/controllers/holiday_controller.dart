@@ -6,7 +6,7 @@ class HolidayController extends GetxController {
   final RxList<HolidayModel> holidays = <HolidayModel>[].obs;
   final RxBool isLoading = true.obs;
   final RxString errorMessage = ''.obs;
-  final RxString filter = 'all'.obs;
+  final RxString filter = 'upcoming'.obs;
 
   List<HolidayModel> get filtered {
     final now = DateTime.now();
