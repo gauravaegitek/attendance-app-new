@@ -232,9 +232,10 @@ class _SplashScreenState extends State<SplashScreen>
                     Text(
                       'Developed by Gaurav',
                       style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.white.withOpacity(0.6),
+                        fontSize: 16,        // ✅ size bada kiya
+                        color: Colors.white.withOpacity(0.9),  // ✅ dark white
                         fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w500,  // ✅ thoda bold
                         letterSpacing: 0.5,
                       ),
                     ),

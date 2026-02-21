@@ -1,14 +1,87 @@
+// import 'package:flutter/material.dart';
+// import 'package:flutter/services.dart';
+// import 'package:get/get.dart';
+
+// import 'controllers/auth_controller.dart';
+// import 'controllers/attendance_controller.dart'; // ✅ ADD
+// import 'core/theme/app_theme.dart';
+// import 'core/routes.dart';
+// import 'services/storage_service.dart';
+// import 'services/device_session_service.dart';
+// import 'services/activity_service.dart';
+
+// void main() async {
+//   WidgetsFlutterBinding.ensureInitialized();
+
+//   // System UI
+//   SystemChrome.setSystemUIOverlayStyle(
+//     const SystemUiOverlayStyle(
+//       statusBarColor: Colors.transparent,
+//       statusBarIconBrightness: Brightness.light,
+//     ),
+//   );
+
+//   // Portrait only
+//   await SystemChrome.setPreferredOrientations([
+//     DeviceOrientation.portraitUp,
+//     DeviceOrientation.portraitDown,
+//   ]);
+
+//   // Initialize storage
+//   await StorageService.init();
+
+//   // ✅ Register controllers/services ONE TIME — order matters!
+//   Get.put(DeviceSessionService(), permanent: true);
+//   Get.put(ActivityService(), permanent: true);
+//   Get.put(AuthController(), permanent: true);
+
+//   // ✅ ADD THIS (very important)
+//   Get.put(AttendanceController(), permanent: true);
+
+//   runApp(const AttendanceApp());
+// }
+
+// class AttendanceApp extends StatelessWidget {
+//   const AttendanceApp({super.key});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return GetMaterialApp(
+//       title: 'Attendance App',
+//       debugShowCheckedModeBanner: false,
+//       theme: AppTheme.lightTheme,
+//       initialRoute: AppRoutes.splash,
+//       getPages: AppRoutes.pages,
+//       defaultTransition: Transition.cupertino,
+//       transitionDuration: const Duration(milliseconds: 300),
+//       builder: (context, child) => ActivityDetector(child: child!),
+//     );
+//   }
+// }
+
+
+
+
+
+
+
+
+
+
+
+// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import 'controllers/auth_controller.dart';
-import 'controllers/attendance_controller.dart'; // ✅ ADD
+import 'controllers/attendance_controller.dart';
 import 'core/theme/app_theme.dart';
 import 'core/routes.dart';
 import 'services/storage_service.dart';
 import 'services/device_session_service.dart';
 import 'services/activity_service.dart';
+import 'core/widgets/no_internet_wrapper.dart'; // ✅
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,12 +103,10 @@ void main() async {
   // Initialize storage
   await StorageService.init();
 
-  // ✅ Register controllers/services ONE TIME — order matters!
+  // Register controllers/services ONE TIME — order matters!
   Get.put(DeviceSessionService(), permanent: true);
   Get.put(ActivityService(), permanent: true);
   Get.put(AuthController(), permanent: true);
-
-  // ✅ ADD THIS (very important)
   Get.put(AttendanceController(), permanent: true);
 
   runApp(const AttendanceApp());
@@ -54,7 +125,9 @@ class AttendanceApp extends StatelessWidget {
       getPages: AppRoutes.pages,
       defaultTransition: Transition.cupertino,
       transitionDuration: const Duration(milliseconds: 300),
-      builder: (context, child) => ActivityDetector(child: child!),
+      builder: (context, child) => NoInternetWrapper( // ✅
+        child: ActivityDetector(child: child!),
+      ),
     );
   }
 }

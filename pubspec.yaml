@@ -24,6 +24,7 @@ dependencies:
 
   # ---------------- NETWORK ----------------
   http: ^1.2.1
+  connectivity_plus: ^6.0.3  # ✅ ADDED
 
   # ---------------- STORAGE ----------------
   shared_preferences: ^2.2.2
