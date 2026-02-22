@@ -911,6 +911,9 @@ class AuthController extends GetxController {
 
   bool get isAdmin => userRole.value.toLowerCase() == AppConstants.roleAdmin;
 
+  // ✅ Performance module ke liye
+  int get currentUserId => StorageService.getUserId();
+
   // ─── ERROR HANDLER (UNABLE STYLE) ────────────────────────────
   void _showUnableError(String context, dynamic e) {
     debugPrint('$context error: $e');

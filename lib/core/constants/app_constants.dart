@@ -102,6 +102,12 @@ class AppConstants {
   static const String profilePhotoEndpoint = '/Profile/photo';
   static const String profileChangePasswordEndpoint = '/Profile/changepassword';
 
+  // Performance
+  static const String performanceScoreEndpoint = '/Performance/employeescore';
+  static const String performanceReviewEndpoint = '/Performance/review';
+  static const String performanceRankingEndpoint = '/Performance/ranking';
+  static const String performanceReviewsEndpoint = '/Performance/reviews';
+
   // =================== STORAGE KEYS ===================
   static const String tokenKey = 'jwt_token';
   static const String userIdKey = 'user_id';
