@@ -75,6 +75,8 @@ import '../screens/attendance/mark_attendance_screen.dart';
 import '../screens/attendance/user_summary_screen.dart';
 import '../screens/attendance/holiday_screen.dart'; // ← ADD
 import '../screens/admin/admin_screen.dart';
+import '../screens/profile/profile_screen.dart'; // ✅ ADD
+
 
 
 class AppRoutes {
@@ -87,6 +89,8 @@ class AppRoutes {
   static const String userSummary = '/user-summary';
   static const String admin = '/admin';
   static const String holidays = '/holidays'; // ← ADD
+    static const profile = '/profile'; // ✅ ADD
+
 
   static List<GetPage> pages = [
     GetPage(
@@ -131,5 +135,7 @@ class AppRoutes {
       name: admin,
       page: () => const AdminScreen(),
     ),
+    GetPage(name: profile, page: () => const ProfileScreen()), // ✅ ADD
+
   ];
 }
