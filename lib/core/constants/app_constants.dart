@@ -108,6 +108,13 @@ class AppConstants {
   static const String performanceRankingEndpoint = '/Performance/ranking';
   static const String performanceReviewsEndpoint = '/Performance/reviews';
 
+  // WFH
+  static const String wfhRequestEndpoint = '/WFH/request';
+  static const String wfhMyRequestsEndpoint = '/WFH/myrequests';
+  static const String wfhSummaryEndpoint = '/WFH/summary';
+  static const String wfhApproveEndpoint = '/WFH/approve';
+  static const String wfhAllEndpoint = '/WFH/all';
+
   // =================== STORAGE KEYS ===================
   static const String tokenKey = 'jwt_token';
   static const String userIdKey = 'user_id';
