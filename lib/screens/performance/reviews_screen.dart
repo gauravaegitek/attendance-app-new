@@ -454,13 +454,6 @@ class _EmptyView extends StatelessWidget {
                   color: Colors.grey.shade500,
                   fontSize: 14,
                   fontFamily: 'Poppins')),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: onAdd,
-            icon: const Icon(Icons.add),
-            label: const Text('Add First Review',
-                style: TextStyle(fontFamily: 'Poppins')),
-          ),
         ],
       ),
     );
