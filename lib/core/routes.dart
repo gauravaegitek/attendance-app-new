@@ -15,6 +15,7 @@
 // import '../screens/performance/reviews_screen.dart';
 // import '../screens/wfh/my_wfh_screen.dart';
 // import '../screens/wfh/wfh_admin_screen.dart';
+// import '../screens/auth/session_expired_screen.dart'; // ✅ ADD
 
 // class AppRoutes {
 //   static const String splash             = '/';
@@ -32,6 +33,7 @@
 //   static const String performanceReviews = '/performance/reviews';
 //   static const String wfh                = '/wfh';
 //   static const String wfhAdmin           = '/wfh-admin';
+//   static const String sessionExpired     = '/session-expired'; // ✅ ADD
 
 //   static List<GetPage> pages = [
 //     GetPage(
@@ -107,18 +109,22 @@
 //       name: wfhAdmin,
 //       page: () => const WfhAdminScreen(),
 //     ),
+
+//     // ── Session Expired ───────────────────────────────────────────────── ✅
+//     GetPage(
+//       name: sessionExpired,
+//       page: () => const SessionExpiredScreen(),
+//       transition: Transition.fade,
+//     ),
 //   ];
 // }
-
-
-
-
 
 
 
 import 'package:get/get.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/wfh_controller.dart';
+import '../controllers/notification_controller.dart'; // ✅ ADD
 import '../screens/splash_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
@@ -133,7 +139,8 @@ import '../screens/performance/ranking_screen.dart';
 import '../screens/performance/reviews_screen.dart';
 import '../screens/wfh/my_wfh_screen.dart';
 import '../screens/wfh/wfh_admin_screen.dart';
-import '../screens/auth/session_expired_screen.dart'; // ✅ ADD
+import '../screens/auth/session_expired_screen.dart';
+import '../screens/notification/notification_screen.dart'; // ✅ ADD
 
 class AppRoutes {
   static const String splash             = '/';
@@ -151,7 +158,8 @@ class AppRoutes {
   static const String performanceReviews = '/performance/reviews';
   static const String wfh                = '/wfh';
   static const String wfhAdmin           = '/wfh-admin';
-  static const String sessionExpired     = '/session-expired'; // ✅ ADD
+  static const String sessionExpired     = '/session-expired';
+  static const String notifications      = '/notifications'; // ✅ ADD
 
   static List<GetPage> pages = [
     GetPage(
@@ -177,6 +185,9 @@ class AppRoutes {
         if (!Get.isRegistered<WfhController>()) {
           Get.put(WfhController());
         }
+        if (!Get.isRegistered<NotificationController>()) { // ✅ ADD
+          Get.put(NotificationController());               // ✅ ADD
+        }                                                  // ✅ ADD
       }),
     ),
     GetPage(
@@ -228,11 +239,22 @@ class AppRoutes {
       page: () => const WfhAdminScreen(),
     ),
 
-    // ── Session Expired ───────────────────────────────────────────────── ✅
+    // ── Session Expired ───────────────────────────────────────────────────
     GetPage(
       name: sessionExpired,
       page: () => const SessionExpiredScreen(),
       transition: Transition.fade,
+    ),
+
+    // ── Notifications ─────────────────────────────────────────────────── ✅
+    GetPage(
+      name: notifications,
+      page: () => const NotificationScreen(),
+      binding: BindingsBuilder(() {
+        if (!Get.isRegistered<NotificationController>()) {
+          Get.put(NotificationController());
+        }
+      }),
     ),
   ];
 }
