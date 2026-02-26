@@ -349,10 +349,6 @@
 
 // // ═══════════════════════════════════════════════
 // //  TAB 1 — Profile
-// //  ✅ FIX: Edit button on Edit Details card header
-// //         Fields are read-only by default
-// //         Click edit → fields become editable
-// //         Save → fields lock again
 // // ═══════════════════════════════════════════════
 // class _ProfileTab extends StatefulWidget {
 //   final ProfileController ctrl;
@@ -363,7 +359,31 @@
 // }
 
 // class _ProfileTabState extends State<_ProfileTab> {
-//   bool _isEditing = false; // ✅ Edit mode state
+//   bool _isEditing = false;
+
+//   static const List<String> _departments = [
+//     'Administration',
+//     'Accounts & Finance',
+//     'Operations',
+//     'Quality Control',
+//     'Logistics',
+//     'IT & Technology',
+//     'Human Resources',
+//     'Procurement',
+//     'Sales & Marketing',
+//   ];
+
+//   static const List<String> _designations = [
+//     'Manager',
+//     'Senior Executive',
+//     'Executive',
+//     'Supervisor',
+//     'Team Lead',
+//     'Analyst',
+//     'Operator',
+//     'Assistant',
+//     'Intern',
+//   ];
 
 //   void _toggleEdit() {
 //     setState(() => _isEditing = !_isEditing);
@@ -374,7 +394,7 @@
 //     HapticFeedback.mediumImpact();
 //     final success = await widget.ctrl.updateProfile();
 //     if (success) {
-//       setState(() => _isEditing = false); // ✅ Lock fields after save
+//       setState(() => _isEditing = false);
 //     }
 //   }
 
@@ -428,12 +448,11 @@
 
 //               const SizedBox(height: 14),
 
-//               // ── Edit Details — with Edit Button ──
+//               // ── Edit Details ─────────────────────
 //               _SectionCard(
 //                 title: 'Edit Details',
 //                 icon: Icons.edit_rounded,
 //                 iconColor: const Color(0xFF6366F1),
-//                 // ✅ Edit / Done button in header
 //                 trailing: GestureDetector(
 //                   onTap: _toggleEdit,
 //                   child: AnimatedContainer(
@@ -477,31 +496,40 @@
 //                   ),
 //                 ),
 //                 child: Column(children: [
+//                   // ── Phone ────────────────────────
 //                   _AnimatedField(
 //                     controller: widget.ctrl.phoneCtrl,
 //                     label: 'Phone',
 //                     icon: Icons.phone_rounded,
 //                     hint: 'Enter phone number',
 //                     keyboardType: TextInputType.phone,
-//                     enabled: _isEditing, // ✅ Controlled by edit mode
+//                     enabled: _isEditing,
 //                   ),
 //                   const SizedBox(height: 14),
-//                   _AnimatedField(
+
+//                   // ── Department (Search Dropdown) ──
+//                   _AnimatedDropdown(
 //                     controller: widget.ctrl.departmentCtrl,
 //                     label: 'Department',
 //                     icon: Icons.corporate_fare_rounded,
-//                     hint: 'e.g. Engineering',
+//                     hint: 'Select Department',
+//                     items: _departments,
 //                     enabled: _isEditing,
 //                   ),
 //                   const SizedBox(height: 14),
-//                   _AnimatedField(
+
+//                   // ── Designation (Search Dropdown) ─
+//                   _AnimatedDropdown(
 //                     controller: widget.ctrl.designationCtrl,
 //                     label: 'Designation',
 //                     icon: Icons.work_rounded,
-//                     hint: 'e.g. Senior Developer',
+//                     hint: 'Select Designation',
+//                     items: _designations,
 //                     enabled: _isEditing,
 //                   ),
 //                   const SizedBox(height: 14),
+
+//                   // ── Emergency Contact ─────────────
 //                   _AnimatedField(
 //                     controller: widget.ctrl.emergencyContactCtrl,
 //                     label: 'Emergency Contact',
@@ -511,6 +539,8 @@
 //                     enabled: _isEditing,
 //                   ),
 //                   const SizedBox(height: 14),
+
+//                   // ── Address ───────────────────────
 //                   _AnimatedField(
 //                     controller: widget.ctrl.addressCtrl,
 //                     label: 'Address',
@@ -526,7 +556,7 @@
 //           ),
 //         ),
 
-//         // ✅ STICKY Save Button — only visible when editing
+//         // ── Sticky Save Button ───────────────────
 //         if (_isEditing)
 //           _StickyBottomBar(
 //             child: Obx(() => _PrimaryButton(
@@ -661,8 +691,7 @@
 //                       controller: widget.ctrl.newPasswordCtrl,
 //                       label: 'New Password',
 //                       showPassword: _showNew,
-//                       onToggle: () =>
-//                           setState(() => _showNew = !_showNew),
+//                       onToggle: () => setState(() => _showNew = !_showNew),
 //                       onChanged: _evaluateStrength,
 //                       validator: (v) {
 //                         if (v == null || v.trim().isEmpty)
@@ -1007,7 +1036,7 @@
 // }
 
 // // ═══════════════════════════════════════════════
-// //  ANIMATED FIELD — ✅ enabled param added
+// //  ANIMATED FIELD
 // // ═══════════════════════════════════════════════
 // class _AnimatedField extends StatefulWidget {
 //   final TextEditingController controller;
@@ -1016,7 +1045,7 @@
 //   final String hint;
 //   final TextInputType keyboardType;
 //   final int maxLines;
-//   final bool enabled; // ✅ NEW
+//   final bool enabled;
 //   final String? Function(String?)? validator;
 
 //   const _AnimatedField({
@@ -1026,7 +1055,7 @@
 //     required this.hint,
 //     this.keyboardType = TextInputType.text,
 //     this.maxLines = 1,
-//     this.enabled = true, // ✅ default true
+//     this.enabled = true,
 //     this.validator,
 //   });
 
@@ -1072,7 +1101,7 @@
 //         keyboardType: widget.keyboardType,
 //         maxLines: widget.maxLines,
 //         validator: widget.validator,
-//         enabled: widget.enabled, // ✅ Controlled by parent
+//         enabled: widget.enabled,
 //         style: TextStyle(
 //             fontFamily: 'Poppins',
 //             fontSize: 14,
@@ -1094,7 +1123,6 @@
 //                   ? AppTheme.primary
 //                   : AppTheme.textSecondary),
 //           filled: true,
-//           // ✅ Background color changes based on enabled state
 //           fillColor: widget.enabled
 //               ? AppTheme.background
 //               : AppTheme.background.withOpacity(0.5),
@@ -1127,14 +1155,368 @@
 // }
 
 // // ═══════════════════════════════════════════════
-// //  SECTION CARD — ✅ trailing param added
+// //  ANIMATED DROPDOWN  ✅ SEARCH ICON VERSION
+// // ═══════════════════════════════════════════════
+// class _AnimatedDropdown extends StatelessWidget {
+//   final TextEditingController controller;
+//   final String label;
+//   final IconData icon;
+//   final String hint;
+//   final List<String> items;
+//   final bool enabled;
+
+//   const _AnimatedDropdown({
+//     required this.controller,
+//     required this.label,
+//     required this.icon,
+//     required this.hint,
+//     required this.items,
+//     this.enabled = true,
+//   });
+
+//   void _openSearchSheet(BuildContext context) {
+//     if (!enabled) return;
+//     HapticFeedback.lightImpact();
+//     showModalBottomSheet(
+//       context: context,
+//       isScrollControlled: true,
+//       backgroundColor: Colors.transparent,
+//       builder: (_) => _SearchableDropdownSheet(
+//         title: label,
+//         items: items,
+//         selected: controller.text,
+//         onSelected: (val) => controller.text = val,
+//       ),
+//     );
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return AnimatedContainer(
+//       duration: const Duration(milliseconds: 200),
+//       decoration: BoxDecoration(
+//         borderRadius: BorderRadius.circular(12),
+//         boxShadow: enabled
+//             ? [
+//                 BoxShadow(
+//                   color: AppTheme.primary.withOpacity(0.08),
+//                   blurRadius: 8,
+//                   spreadRadius: 1,
+//                 )
+//               ]
+//             : [],
+//       ),
+//       child: TextFormField(
+//         controller: controller,
+//         readOnly: true,
+//         enabled: enabled,
+//         // onTap: () => _openSearchSheet(context),
+//         style: TextStyle(
+//           fontFamily: 'Poppins',
+//           fontSize: 14,
+//           color: enabled ? AppTheme.textPrimary : AppTheme.textSecondary,
+//         ),
+//         decoration: InputDecoration(
+//           labelText: label,
+//           hintText: hint,
+//           hintStyle: const TextStyle(
+//             fontFamily: 'Poppins',
+//             fontSize: 13,
+//             color: AppTheme.textHint,
+//           ),
+//           labelStyle: TextStyle(
+//             fontFamily: 'Poppins',
+//             color: enabled ? AppTheme.textSecondary : AppTheme.textHint,
+//           ),
+//           prefixIcon: Icon(
+//             icon,
+//             size: 20,
+//             color: enabled ? AppTheme.primary : AppTheme.textSecondary,
+//           ),
+//           // ✅ Search icon — tap to open searchable sheet
+//           suffixIcon: enabled
+//               ? IconButton(
+//                   icon: const Icon(
+//                     Icons.search_rounded,
+//                     color: AppTheme.primary,
+//                     size: 22,
+//                   ),
+//                   onPressed: () => _openSearchSheet(context),
+//                 )
+//               : const Icon(
+//                   Icons.search_rounded,
+//                   color: AppTheme.textSecondary,
+//                   size: 22,
+//                 ),
+//           filled: true,
+//           fillColor: enabled
+//               ? AppTheme.background
+//               : AppTheme.background.withOpacity(0.5),
+//           border: OutlineInputBorder(
+//             borderRadius: BorderRadius.circular(12),
+//             borderSide: const BorderSide(color: AppTheme.divider),
+//           ),
+//           enabledBorder: OutlineInputBorder(
+//             borderRadius: BorderRadius.circular(12),
+//             borderSide: const BorderSide(color: AppTheme.divider),
+//           ),
+//           focusedBorder: OutlineInputBorder(
+//             borderRadius: BorderRadius.circular(12),
+//             borderSide: const BorderSide(color: AppTheme.primary, width: 1.5),
+//           ),
+//           disabledBorder: OutlineInputBorder(
+//             borderRadius: BorderRadius.circular(12),
+//             borderSide: const BorderSide(color: AppTheme.divider),
+//           ),
+//           contentPadding:
+//               const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+//         ),
+//       ),
+//     );
+//   }
+// }
+
+// // ═══════════════════════════════════════════════
+// //  SEARCHABLE DROPDOWN BOTTOM SHEET  ✅ NEW
+// // ═══════════════════════════════════════════════
+// class _SearchableDropdownSheet extends StatefulWidget {
+//   final String title;
+//   final List<String> items;
+//   final String selected;
+//   final ValueChanged<String> onSelected;
+
+//   const _SearchableDropdownSheet({
+//     required this.title,
+//     required this.items,
+//     required this.selected,
+//     required this.onSelected,
+//   });
+
+//   @override
+//   State<_SearchableDropdownSheet> createState() =>
+//       _SearchableDropdownSheetState();
+// }
+
+// class _SearchableDropdownSheetState
+//     extends State<_SearchableDropdownSheet> {
+//   late List<String> _filtered;
+//   final _searchCtrl = TextEditingController();
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     _filtered = widget.items;
+//     _searchCtrl.addListener(_filter);
+//   }
+
+//   void _filter() {
+//     final q = _searchCtrl.text.toLowerCase();
+//     setState(() {
+//       _filtered = widget.items
+//           .where((e) => e.toLowerCase().contains(q))
+//           .toList();
+//     });
+//   }
+
+//   @override
+//   void dispose() {
+//     _searchCtrl.dispose();
+//     super.dispose();
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return DraggableScrollableSheet(
+//       initialChildSize: 0.6,
+//       minChildSize: 0.4,
+//       maxChildSize: 0.85,
+//       builder: (_, scrollCtrl) => Container(
+//         decoration: const BoxDecoration(
+//           color: Colors.white,
+//           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+//         ),
+//         child: Column(
+//           children: [
+//             // ── Handle ──────────────────────────
+//             const SizedBox(height: 12),
+//             Container(
+//               width: 40,
+//               height: 4,
+//               decoration: BoxDecoration(
+//                 color: Colors.grey.shade300,
+//                 borderRadius: BorderRadius.circular(10),
+//               ),
+//             ),
+//             const SizedBox(height: 16),
+
+//             // ── Title ────────────────────────────
+//             Padding(
+//               padding: const EdgeInsets.symmetric(horizontal: 20),
+//               child: Row(children: [
+//                 Container(
+//                   padding: const EdgeInsets.all(8),
+//                   decoration: BoxDecoration(
+//                     color: AppTheme.primaryLight,
+//                     borderRadius: BorderRadius.circular(10),
+//                   ),
+//                   child: const Icon(Icons.search_rounded,
+//                       color: AppTheme.primary, size: 18),
+//                 ),
+//                 const SizedBox(width: 10),
+//                 Text(
+//                   'Select ${widget.title}',
+//                   style: const TextStyle(
+//                     fontSize: 15,
+//                     fontWeight: FontWeight.w700,
+//                     fontFamily: 'Poppins',
+//                     color: AppTheme.textPrimary,
+//                   ),
+//                 ),
+//               ]),
+//             ),
+//             const SizedBox(height: 14),
+
+//             // ── Search Field ─────────────────────
+//             Padding(
+//               padding: const EdgeInsets.symmetric(horizontal: 16),
+//               child: TextField(
+//                 controller: _searchCtrl,
+//                 autofocus: true,
+//                 style: const TextStyle(
+//                     fontFamily: 'Poppins',
+//                     fontSize: 14,
+//                     color: AppTheme.textPrimary),
+//                 decoration: InputDecoration(
+//                   hintText: 'Search ${widget.title}...',
+//                   hintStyle: const TextStyle(
+//                       fontFamily: 'Poppins',
+//                       fontSize: 13,
+//                       color: AppTheme.textHint),
+//                   prefixIcon: const Icon(Icons.search_rounded,
+//                       color: AppTheme.primary, size: 20),
+//                   suffixIcon: ValueListenableBuilder<TextEditingValue>(
+//                     valueListenable: _searchCtrl,
+//                     builder: (_, value, __) => value.text.isNotEmpty
+//                         ? IconButton(
+//                             icon: const Icon(Icons.clear_rounded,
+//                                 size: 18,
+//                                 color: AppTheme.textSecondary),
+//                             onPressed: () => _searchCtrl.clear(),
+//                           )
+//                         : const SizedBox.shrink(),
+//                   ),
+//                   filled: true,
+//                   fillColor: AppTheme.background,
+//                   border: OutlineInputBorder(
+//                     borderRadius: BorderRadius.circular(12),
+//                     borderSide: const BorderSide(color: AppTheme.divider),
+//                   ),
+//                   enabledBorder: OutlineInputBorder(
+//                     borderRadius: BorderRadius.circular(12),
+//                     borderSide: const BorderSide(color: AppTheme.divider),
+//                   ),
+//                   focusedBorder: OutlineInputBorder(
+//                     borderRadius: BorderRadius.circular(12),
+//                     borderSide: const BorderSide(
+//                         color: AppTheme.primary, width: 1.5),
+//                   ),
+//                   contentPadding: const EdgeInsets.symmetric(
+//                       horizontal: 14, vertical: 12),
+//                 ),
+//               ),
+//             ),
+//             const SizedBox(height: 8),
+//             const Divider(height: 1, color: AppTheme.divider),
+
+//             // ── List ─────────────────────────────
+//             Expanded(
+//               child: _filtered.isEmpty
+//                   ? Center(
+//                       child: Column(
+//                         mainAxisSize: MainAxisSize.min,
+//                         children: [
+//                           Icon(Icons.search_off_rounded,
+//                               size: 44,
+//                               color: AppTheme.textSecondary
+//                                   .withOpacity(0.35)),
+//                           const SizedBox(height: 10),
+//                           const Text('No results found',
+//                               style: TextStyle(
+//                                   fontFamily: 'Poppins',
+//                                   fontSize: 13,
+//                                   color: AppTheme.textSecondary)),
+//                         ],
+//                       ),
+//                     )
+//                   : ListView.separated(
+//                       controller: scrollCtrl,
+//                       padding: const EdgeInsets.symmetric(vertical: 6),
+//                       itemCount: _filtered.length,
+//                       separatorBuilder: (_, __) => const Divider(
+//                           height: 1, color: AppTheme.divider),
+//                       itemBuilder: (_, i) {
+//                         final item = _filtered[i];
+//                         final isSelected = item == widget.selected;
+//                         return ListTile(
+//                           onTap: () {
+//                             widget.onSelected(item);
+//                             Get.back();
+//                           },
+//                           contentPadding: const EdgeInsets.symmetric(
+//                               horizontal: 20, vertical: 4),
+//                           leading: Container(
+//                             padding: const EdgeInsets.all(8),
+//                             decoration: BoxDecoration(
+//                               color: isSelected
+//                                   ? AppTheme.primaryLight
+//                                   : AppTheme.background,
+//                               borderRadius: BorderRadius.circular(10),
+//                             ),
+//                             child: Icon(
+//                               Icons.label_outline_rounded,
+//                               size: 16,
+//                               color: isSelected
+//                                   ? AppTheme.primary
+//                                   : AppTheme.textSecondary,
+//                             ),
+//                           ),
+//                           title: Text(
+//                             item,
+//                             style: TextStyle(
+//                               fontFamily: 'Poppins',
+//                               fontSize: 14,
+//                               fontWeight: isSelected
+//                                   ? FontWeight.w600
+//                                   : FontWeight.w400,
+//                               color: isSelected
+//                                   ? AppTheme.primary
+//                                   : AppTheme.textPrimary,
+//                             ),
+//                           ),
+//                           trailing: isSelected
+//                               ? const Icon(Icons.check_circle_rounded,
+//                                   color: AppTheme.primary, size: 20)
+//                               : null,
+//                         );
+//                       },
+//                     ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
+
+// // ═══════════════════════════════════════════════
+// //  SECTION CARD
 // // ═══════════════════════════════════════════════
 // class _SectionCard extends StatelessWidget {
 //   final String title;
 //   final IconData icon;
 //   final Color iconColor;
 //   final Widget child;
-//   final Widget? trailing; // ✅ NEW — edit button slot
+//   final Widget? trailing;
 
 //   const _SectionCard({
 //     required this.title,
@@ -1169,7 +1551,6 @@
 //                       fontFamily: 'Poppins',
 //                       color: AppTheme.textPrimary)),
 //             ),
-//             // ✅ Edit button right side mein
 //             if (trailing != null) trailing!,
 //           ]),
 //         ),
@@ -1408,6 +1789,10 @@
 //     );
 //   }
 // }
+
+
+
+
 
 
 
@@ -1778,6 +2163,9 @@ class _ProfileTab extends StatefulWidget {
 class _ProfileTabState extends State<_ProfileTab> {
   bool _isEditing = false;
 
+  // ✅ FIX 2: Permanently lock after first save
+  bool _isPermanentlyLocked = false;
+
   static const List<String> _departments = [
     'Administration',
     'Accounts & Finance',
@@ -1802,7 +2190,27 @@ class _ProfileTabState extends State<_ProfileTab> {
     'Intern',
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    // ✅ FIX 2: If profile already has data → lock on first load
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkIfAlreadySaved();
+    });
+  }
+
+  void _checkIfAlreadySaved() {
+    final phone       = widget.ctrl.phoneCtrl.text.trim();
+    final department  = widget.ctrl.departmentCtrl.text.trim();
+    final designation = widget.ctrl.designationCtrl.text.trim();
+
+    if (phone.isNotEmpty || department.isNotEmpty || designation.isNotEmpty) {
+      setState(() => _isPermanentlyLocked = true);
+    }
+  }
+
   void _toggleEdit() {
+    if (_isPermanentlyLocked) return; // ✅ FIX 2: block if already saved
     setState(() => _isEditing = !_isEditing);
     HapticFeedback.lightImpact();
   }
@@ -1811,7 +2219,24 @@ class _ProfileTabState extends State<_ProfileTab> {
     HapticFeedback.mediumImpact();
     final success = await widget.ctrl.updateProfile();
     if (success) {
-      setState(() => _isEditing = false);
+      setState(() {
+        _isEditing           = false;
+        _isPermanentlyLocked = true; // ✅ FIX 2: lock forever after save
+      });
+
+      // ✅ FIX 1: Success snackbar at TOP
+      Get.snackbar(
+        'Success',
+        'Profile updated successfully!',
+        backgroundColor: AppTheme.success,
+        colorText: Colors.white,
+        icon: const Icon(Icons.check_circle_outline_rounded,
+            color: Colors.white, size: 22),
+        snackPosition: SnackPosition.TOP,
+        margin: const EdgeInsets.all(16),
+        borderRadius: 14,
+        duration: const Duration(seconds: 3),
+      );
     }
   }
 
@@ -1870,48 +2295,75 @@ class _ProfileTabState extends State<_ProfileTab> {
                 title: 'Edit Details',
                 icon: Icons.edit_rounded,
                 iconColor: const Color(0xFF6366F1),
-                trailing: GestureDetector(
-                  onTap: _toggleEdit,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: _isEditing
-                          ? AppTheme.primary.withOpacity(0.12)
-                          : AppTheme.background,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: _isEditing
-                            ? AppTheme.primary
-                            : AppTheme.divider,
-                      ),
-                    ),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      Icon(
-                        _isEditing
-                            ? Icons.close_rounded
-                            : Icons.edit_rounded,
-                        size: 13,
-                        color: _isEditing
-                            ? AppTheme.primary
-                            : AppTheme.textSecondary,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        _isEditing ? 'Cancel' : 'Edit',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w600,
-                          color: _isEditing
-                              ? AppTheme.primary
-                              : AppTheme.textSecondary,
+                // ✅ FIX 2: Show "Saved" lock badge OR edit toggle
+                trailing: _isPermanentlyLocked
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: AppTheme.successLight,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                              color: AppTheme.success.withOpacity(0.4)),
+                        ),
+                        child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.lock_rounded,
+                                  size: 12, color: AppTheme.success),
+                              SizedBox(width: 4),
+                              Text('Saved',
+                                  style: TextStyle(
+                                      fontSize: 11,
+                                      fontFamily: 'Poppins',
+                                      fontWeight: FontWeight.w600,
+                                      color: AppTheme.success)),
+                            ]),
+                      )
+                    : GestureDetector(
+                        onTap: _toggleEdit,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: _isEditing
+                                ? AppTheme.primary.withOpacity(0.12)
+                                : AppTheme.background,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: _isEditing
+                                  ? AppTheme.primary
+                                  : AppTheme.divider,
+                            ),
+                          ),
+                          child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                            Icon(
+                              _isEditing
+                                  ? Icons.close_rounded
+                                  : Icons.edit_rounded,
+                              size: 13,
+                              color: _isEditing
+                                  ? AppTheme.primary
+                                  : AppTheme.textSecondary,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _isEditing ? 'Cancel' : 'Edit',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.w600,
+                                color: _isEditing
+                                    ? AppTheme.primary
+                                    : AppTheme.textSecondary,
+                              ),
+                            ),
+                          ]),
                         ),
                       ),
-                    ]),
-                  ),
-                ),
                 child: Column(children: [
                   // ── Phone ────────────────────────
                   _AnimatedField(
@@ -1920,7 +2372,7 @@ class _ProfileTabState extends State<_ProfileTab> {
                     icon: Icons.phone_rounded,
                     hint: 'Enter phone number',
                     keyboardType: TextInputType.phone,
-                    enabled: _isEditing,
+                    enabled: _isEditing && !_isPermanentlyLocked,
                   ),
                   const SizedBox(height: 14),
 
@@ -1931,7 +2383,7 @@ class _ProfileTabState extends State<_ProfileTab> {
                     icon: Icons.corporate_fare_rounded,
                     hint: 'Select Department',
                     items: _departments,
-                    enabled: _isEditing,
+                    enabled: _isEditing && !_isPermanentlyLocked,
                   ),
                   const SizedBox(height: 14),
 
@@ -1942,7 +2394,7 @@ class _ProfileTabState extends State<_ProfileTab> {
                     icon: Icons.work_rounded,
                     hint: 'Select Designation',
                     items: _designations,
-                    enabled: _isEditing,
+                    enabled: _isEditing && !_isPermanentlyLocked,
                   ),
                   const SizedBox(height: 14),
 
@@ -1953,7 +2405,7 @@ class _ProfileTabState extends State<_ProfileTab> {
                     icon: Icons.emergency_rounded,
                     hint: 'Emergency contact number',
                     keyboardType: TextInputType.phone,
-                    enabled: _isEditing,
+                    enabled: _isEditing && !_isPermanentlyLocked,
                   ),
                   const SizedBox(height: 14),
 
@@ -1964,7 +2416,7 @@ class _ProfileTabState extends State<_ProfileTab> {
                     icon: Icons.location_on_rounded,
                     hint: 'Enter your address',
                     maxLines: 3,
-                    enabled: _isEditing,
+                    enabled: _isEditing && !_isPermanentlyLocked,
                   ),
                 ]),
               ),
@@ -1973,8 +2425,8 @@ class _ProfileTabState extends State<_ProfileTab> {
           ),
         ),
 
-        // ── Sticky Save Button ───────────────────
-        if (_isEditing)
+        // ── Sticky Save Button (only when editing & not locked) ──
+        if (_isEditing && !_isPermanentlyLocked)
           _StickyBottomBar(
             child: Obx(() => _PrimaryButton(
                   label: 'Save Changes',
@@ -2627,7 +3079,6 @@ class _AnimatedDropdown extends StatelessWidget {
         controller: controller,
         readOnly: true,
         enabled: enabled,
-        // onTap: () => _openSearchSheet(context),
         style: TextStyle(
           fontFamily: 'Poppins',
           fontSize: 14,
@@ -2650,7 +3101,6 @@ class _AnimatedDropdown extends StatelessWidget {
             size: 20,
             color: enabled ? AppTheme.primary : AppTheme.textSecondary,
           ),
-          // ✅ Search icon — tap to open searchable sheet
           suffixIcon: enabled
               ? IconButton(
                   icon: const Icon(
@@ -2694,7 +3144,7 @@ class _AnimatedDropdown extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════
-//  SEARCHABLE DROPDOWN BOTTOM SHEET  ✅ NEW
+//  SEARCHABLE DROPDOWN BOTTOM SHEET
 // ═══════════════════════════════════════════════
 class _SearchableDropdownSheet extends StatefulWidget {
   final String title;
@@ -2754,7 +3204,6 @@ class _SearchableDropdownSheetState
         ),
         child: Column(
           children: [
-            // ── Handle ──────────────────────────
             const SizedBox(height: 12),
             Container(
               width: 40,
@@ -2765,8 +3214,6 @@ class _SearchableDropdownSheetState
               ),
             ),
             const SizedBox(height: 16),
-
-            // ── Title ────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(children: [
@@ -2792,8 +3239,6 @@ class _SearchableDropdownSheetState
               ]),
             ),
             const SizedBox(height: 14),
-
-            // ── Search Field ─────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: TextField(
@@ -2844,8 +3289,6 @@ class _SearchableDropdownSheetState
             ),
             const SizedBox(height: 8),
             const Divider(height: 1, color: AppTheme.divider),
-
-            // ── List ─────────────────────────────
             Expanded(
               child: _filtered.isEmpty
                   ? Center(
