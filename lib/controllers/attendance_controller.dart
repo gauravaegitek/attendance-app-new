@@ -325,57 +325,839 @@
 
 
 
+// import 'dart:io';
+// import 'package:flutter/material.dart';
+// import 'package:get/get.dart';
+// import 'package:image_picker/image_picker.dart';
+// import 'package:device_info_plus/device_info_plus.dart';
+// import 'package:intl/intl.dart';
+
+// import '../models/models.dart';
+// import '../services/api_service.dart';
+// import '../services/storage_service.dart';
+// import '../services/location_service.dart';
+// import '../core/utils/app_utils.dart';
+
+// class AttendanceController extends GetxController {
+//   // =================== STATE ===================
+//   final isMarkingIn = false.obs;
+//   final isMarkingOut = false.obs;
+//   final isFetchingSummary = false.obs;
+
+//   final selfieFile = Rxn<File>();
+//   final currentLat = 0.0.obs;
+//   final currentLng = 0.0.obs;
+//   final currentAddress = ''.obs;
+//   final isLocationLoading = false.obs;
+
+//   final attendanceRecords = <AttendanceRecord>[].obs;
+//   final markedInData = Rxn<MarkInData>();
+//   final markedOutData = Rxn<MarkOutData>();
+
+//   // Summary Filters
+//   final fromDate = DateTime(DateTime.now().year, DateTime.now().month, 1).obs;
+//   final toDate = DateTime.now().obs;
+
+//   final _imagePicker = ImagePicker();
+
+//   // =================== USER INFO ===================
+//   int get userId => StorageService.getUserId();
+//   String get userName => StorageService.getUserName();
+//   String get role => StorageService.getUserRole();
+
+//   // =================== SELFIE REQUIRED CHECK ===================
+//   bool get isSelfieRequired => StorageService.getRequiresSelfie();
+
+//   // =================== ERROR HANDLER (USER-FRIENDLY) ===================
+//   void _showUnableError(String context, dynamic e) {
+//     // Developer log only
+//     debugPrint('$context error: $e');
+
+//     final msg = e.toString();
+
+//     // Optional network friendly message
+//     if (msg.contains('SocketException')) {
+//       AppUtils.showError('Unable to connect. Please check your internet and try again.');
+//       return;
+//     }
+//     if (msg.contains('TimeoutException')) {
+//       AppUtils.showError('Unable to complete request. Please try again.');
+//       return;
+//     }
+
+//     // Context-wise "Unable..." messages
+//     switch (context) {
+//       case 'fetchLocation':
+//         AppUtils.showError('Unable to fetch location. Please enable GPS and try again.');
+//         break;
+//       case 'takeSelfie':
+//         AppUtils.showError('Unable to open camera. Please try again.');
+//         break;
+//       case 'markIn':
+//         AppUtils.showError('Unable to mark attendance. Please try again.');
+//         break;
+//       case 'markOut':
+//         AppUtils.showError('Unable to mark out. Please try again.');
+//         break;
+//       case 'fetchUserSummary':
+//         AppUtils.showError('Unable to load summary. Please try again.');
+//         break;
+//       default:
+//         AppUtils.showError('Unable to process request. Please try again.');
+//     }
+//   }
+
+//   // =================== DEVICE ID ===================
+//   Future<String> _getDeviceId() async {
+//     try {
+//       final info = DeviceInfoPlugin();
+//       if (Platform.isAndroid) {
+//         return (await info.androidInfo).id;
+//       } else if (Platform.isIOS) {
+//         return (await info.iosInfo).identifierForVendor ?? 'unknown';
+//       }
+//       return 'unknown';
+//     } catch (e) {
+//       debugPrint('getDeviceId error: $e');
+//       return 'unknown';
+//     }
+//   }
+
+//   // =================== LOCATION ===================
+//   Future<void> fetchLocation() async {
+//     isLocationLoading.value = true;
+//     try {
+//       final position = await LocationService.getCurrentPosition();
+//       if (position != null) {
+//         currentLat.value = position.latitude;
+//         currentLng.value = position.longitude;
+
+//         final addr = await LocationService.getAddressFromCoordinates(
+//           position.latitude,
+//           position.longitude,
+//         );
+
+//         currentAddress.value = addr.trim();
+//       } else {
+//         AppUtils.showError('Unable to fetch location. Please enable GPS and try again.');
+//       }
+//     } catch (e) {
+//       _showUnableError('fetchLocation', e);
+//     } finally {
+//       isLocationLoading.value = false;
+//     }
+//   }
+
+//   // =================== CAMERA ===================
+//   Future<void> takeSelfie() async {
+//     try {
+//       final picked = await _imagePicker.pickImage(
+//         source: ImageSource.camera,
+//         imageQuality: 70,
+//         maxWidth: 800,
+//         maxHeight: 800,
+//         preferredCameraDevice: CameraDevice.front,
+//       );
+//       if (picked != null) {
+//         selfieFile.value = File(picked.path);
+//       }
+//     } catch (e) {
+//       _showUnableError('takeSelfie', e);
+//     }
+//   }
+
+//   void clearSelfie() => selfieFile.value = null;
+
+//   void resetScreenState() {
+//     clearSelfie();
+//     currentLat.value = 0.0;
+//     currentLng.value = 0.0;
+//     currentAddress.value = '';
+//     isLocationLoading.value = false;
+//     isMarkingIn.value = false;
+//     isMarkingOut.value = false;
+//   }
+
+//   // =================== MARK IN ===================
+//   Future<bool> markIn() async {
+//     debugPrint('=== MARK IN DEBUG ===');
+//     debugPrint('userId          : $userId');
+//     debugPrint('userName        : $userName');
+//     debugPrint('role            : $role');
+//     debugPrint('isSelfieRequired: $isSelfieRequired');
+//     debugPrint('====================');
+
+//     if (isSelfieRequired && selfieFile.value == null) {
+//       AppUtils.showWarning('Please take a selfie first');
+//       return false;
+//     }
+
+//     if (currentLat.value == 0.0 || currentLng.value == 0.0) {
+//       AppUtils.showWarning('Please fetch location first');
+//       return false;
+//     }
+
+//     if (currentAddress.value.trim().isEmpty) {
+//       AppUtils.showWarning('Address not available. Please refresh location.');
+//       return false;
+//     }
+
+//     if (userName.isEmpty) {
+//       AppUtils.showError('Unable to continue. Please login again.');
+//       return false;
+//     }
+
+//     isMarkingIn.value = true;
+
+//     try {
+//       final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+//       final deviceId = await _getDeviceId();
+
+//       final result = await ApiService.markIn(
+//         attendanceDate: today,
+//         latitude: currentLat.value,
+//         longitude: currentLng.value,
+//         locationAddress: currentAddress.value.trim(),
+//         selfieImage: selfieFile.value,
+//         biometricData: deviceId,
+//         userName: userName,
+//         userId: userId,
+//       );
+
+//       debugPrint('markIn result: $result');
+
+//       if (result['success'] == true) {
+//         AppUtils.showSuccess('Mark-in successful!');
+//         resetScreenState();
+//         return true;
+//       } else {
+//         AppUtils.showError(result['message'] ?? 'Unable to mark attendance. Please try again.');
+//         return false;
+//       }
+//     } catch (e) {
+//       _showUnableError('markIn', e);
+//       return false;
+//     } finally {
+//       isMarkingIn.value = false;
+//     }
+//   }
+
+//   // =================== MARK OUT ===================
+//   Future<bool> markOut() async {
+//     debugPrint('=== MARK OUT DEBUG ===');
+//     debugPrint('userId          : $userId');
+//     debugPrint('userName        : $userName');
+//     debugPrint('role            : $role');
+//     debugPrint('isSelfieRequired: $isSelfieRequired');
+//     debugPrint('=====================');
+
+//     if (isSelfieRequired && selfieFile.value == null) {
+//       AppUtils.showWarning('Please take a selfie first');
+//       return false;
+//     }
+
+//     if (currentLat.value == 0.0 || currentLng.value == 0.0) {
+//       AppUtils.showWarning('Please fetch location first');
+//       return false;
+//     }
+
+//     if (currentAddress.value.trim().isEmpty) {
+//       AppUtils.showWarning('Address not available. Please refresh location.');
+//       return false;
+//     }
+
+//     if (userName.isEmpty) {
+//       AppUtils.showError('Unable to continue. Please login again.');
+//       return false;
+//     }
+
+//     isMarkingOut.value = true;
+
+//     try {
+//       final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+//       final deviceId = await _getDeviceId();
+
+//       final result = await ApiService.markOut(
+//         attendanceDate: today,
+//         latitude: currentLat.value,
+//         longitude: currentLng.value,
+//         locationAddress: currentAddress.value.trim(),
+//         selfieImage: selfieFile.value,
+//         biometricData: deviceId,
+//         userName: userName,
+//         userId: userId,
+//       );
+
+//       debugPrint('markOut result: $result');
+
+//       if (result['success'] == true) {
+//         AppUtils.showSuccess('Mark-out successful!');
+//         resetScreenState();
+//         return true;
+//       } else {
+//         AppUtils.showError(result['message'] ?? 'Unable to mark out. Please try again.');
+//         return false;
+//       }
+//     } catch (e) {
+//       _showUnableError('markOut', e);
+//       return false;
+//     } finally {
+//       isMarkingOut.value = false;
+//     }
+//   }
+
+//   // =================== SUMMARY ===================
+//   Future<void> fetchUserSummary() async {
+//     final diff = toDate.value.difference(fromDate.value).inDays;
+//     if (diff > 31) {
+//       AppUtils.showError('Unable to load summary. Date range cannot exceed 31 days.');
+//       return;
+//     }
+
+//     isFetchingSummary.value = true;
+//     try {
+//       final records = await ApiService.getUserSummary(
+//         fromDate: AppUtils.formatDateApi(fromDate.value),
+//         toDate: AppUtils.formatDateApi(toDate.value),
+//       );
+//       attendanceRecords.value = records;
+//     } catch (e) {
+//       _showUnableError('fetchUserSummary', e);
+//     } finally {
+//       isFetchingSummary.value = false;
+//     }
+//   }
+
+//   // =================== DATE PICKERS ===================
+//   Future<void> pickFromDate(BuildContext context) async {
+//     final picked = await showDatePicker(
+//       context: context,
+//       initialDate: fromDate.value,
+//       firstDate: DateTime(2020),
+//       lastDate: DateTime.now(),
+//     );
+//     if (picked != null) {
+//       fromDate.value = picked;
+//       if (toDate.value.isBefore(picked)) {
+//         toDate.value = picked;
+//       }
+//     }
+//   }
+
+//   Future<void> pickToDate(BuildContext context) async {
+//     final picked = await showDatePicker(
+//       context: context,
+//       initialDate: toDate.value,
+//       firstDate: fromDate.value,
+//       lastDate: DateTime.now(),
+//     );
+//     if (picked != null) toDate.value = picked;
+//   }
+
+//   // =================== SUMMARY STATS ===================
+//   int get totalPresent =>
+//       attendanceRecords.where((r) => r.status == 'Complete').length;
+
+//   int get totalIncomplete =>
+//       attendanceRecords.where((r) => r.status != 'Complete').length;
+
+//   double get totalWorkHours => attendanceRecords.fold(
+//         0,
+//         (sum, r) => sum + (r.totalHours ?? 0),
+//       );
+
+//   // =================== PERIOD SUMMARY STATS ===================
+//   int get totalDaysInRange {
+//     return toDate.value.difference(fromDate.value).inDays + 1;
+//   }
+
+//   int get totalSundays {
+//     int count = 0;
+//     DateTime d = fromDate.value;
+//     while (!d.isAfter(toDate.value)) {
+//       if (d.weekday == DateTime.sunday) count++;
+//       d = d.add(const Duration(days: 1));
+//     }
+//     return count;
+//   }
+
+//   int get totalAbsent {
+//     final workingDays = totalDaysInRange - totalSundays;
+//     return (workingDays - totalPresent).clamp(0, workingDays);
+//   }
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+// // lib/controllers/attendance_controller.dart
+
+// import 'dart:io';
+// import 'package:flutter/material.dart';
+// import 'package:get/get.dart';
+// import 'package:image_picker/image_picker.dart';
+// import 'package:device_info_plus/device_info_plus.dart';
+// import 'package:geolocator/geolocator.dart';
+// import 'package:geocoding/geocoding.dart';
+// import 'package:intl/intl.dart';
+
+// import '../models/models.dart';
+// import '../services/api_service.dart';
+// import '../services/storage_service.dart';
+// import '../core/utils/app_utils.dart';
+
+// class AttendanceController extends GetxController {
+//   // =================== STATE ===================
+//   final isMarkingIn       = false.obs;
+//   final isMarkingOut      = false.obs;
+//   final isFetchingSummary = false.obs;
+
+//   final selfieFile          = Rxn<File>();
+//   final currentLat          = 0.0.obs;
+//   final currentLng          = 0.0.obs;
+//   final currentAddress      = ''.obs;
+//   final isLocationLoading   = false.obs;
+
+//   final attendanceRecords   = <AttendanceRecord>[].obs;
+//   final markedInData        = Rxn<MarkInData>();
+//   final markedOutData       = Rxn<MarkOutData>();
+
+//   // Summary Filters
+//   final fromDate = DateTime(DateTime.now().year, DateTime.now().month, 1).obs;
+//   final toDate   = DateTime.now().obs;
+
+//   final _imagePicker = ImagePicker();
+
+//   // =================== USER INFO ===================
+//   int    get userId          => StorageService.getUserId();
+//   String get userName        => StorageService.getUserName();
+//   String get role            => StorageService.getUserRole();
+//   bool   get isSelfieRequired => StorageService.getRequiresSelfie();
+
+//   // =================== ERROR HANDLER ===================
+//   void _showUnableError(String context, dynamic e) {
+//     debugPrint('$context error: $e');
+
+//     final msg = e.toString();
+//     if (msg.contains('SocketException')) {
+//       AppUtils.showError('Unable to connect. Please check your internet and try again.');
+//       return;
+//     }
+//     if (msg.contains('TimeoutException')) {
+//       AppUtils.showError('Unable to complete request. Please try again.');
+//       return;
+//     }
+
+//     switch (context) {
+//       case 'fetchLocation':
+//         AppUtils.showError('Unable to fetch location. Please enable GPS and try again.');
+//         break;
+//       case 'takeSelfie':
+//         AppUtils.showError('Unable to open camera. Please try again.');
+//         break;
+//       case 'markIn':
+//         AppUtils.showError('Unable to mark attendance. Please try again.');
+//         break;
+//       case 'markOut':
+//         AppUtils.showError('Unable to mark out. Please try again.');
+//         break;
+//       case 'fetchUserSummary':
+//         AppUtils.showError('Unable to load summary. Please try again.');
+//         break;
+//       default:
+//         AppUtils.showError('Unable to process request. Please try again.');
+//     }
+//   }
+
+//   // =================== DEVICE ID ===================
+//   Future<String> _getDeviceId() async {
+//     try {
+//       final info = DeviceInfoPlugin();
+//       if (Platform.isAndroid) {
+//         return (await info.androidInfo).id;
+//       } else if (Platform.isIOS) {
+//         return (await info.iosInfo).identifierForVendor ?? 'unknown';
+//       }
+//       return 'unknown';
+//     } catch (e) {
+//       debugPrint('getDeviceId error: $e');
+//       return 'unknown';
+//     }
+//   }
+
+//   // =================== LOCATION (inline — no LocationService) ===================
+//   Future<void> fetchLocation() async {
+//     isLocationLoading.value = true;
+//     try {
+//       // 1. GPS enabled check
+//       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+//       if (!serviceEnabled) {
+//         AppUtils.showError('Unable to fetch location. Please enable GPS and try again.');
+//         return;
+//       }
+
+//       // 2. Permission check / request
+//       LocationPermission permission = await Geolocator.checkPermission();
+//       if (permission == LocationPermission.denied) {
+//         permission = await Geolocator.requestPermission();
+//         if (permission == LocationPermission.denied) {
+//           AppUtils.showError('Location permission denied. Please allow location access.');
+//           return;
+//         }
+//       }
+//       if (permission == LocationPermission.deniedForever) {
+//         AppUtils.showError('Location permission permanently denied. Please enable from Settings.');
+//         return;
+//       }
+
+//       // 3. Get position
+//       final position = await Geolocator.getCurrentPosition(
+//         desiredAccuracy: LocationAccuracy.high,
+//         timeLimit:       const Duration(seconds: 15),
+//       );
+
+//       currentLat.value = position.latitude;
+//       currentLng.value = position.longitude;
+
+//       // 4. Reverse geocode
+//       final addr = await _getAddress(position.latitude, position.longitude);
+//       currentAddress.value = addr.trim();
+
+//     } catch (e) {
+//       _showUnableError('fetchLocation', e);
+//     } finally {
+//       isLocationLoading.value = false;
+//     }
+//   }
+
+//   /// Reverse geocode — coordinates se address
+//   Future<String> _getAddress(double lat, double lng) async {
+//     try {
+//       final placemarks = await placemarkFromCoordinates(
+//         lat, lng,
+//       ).timeout(
+//         const Duration(seconds: 10),
+//         onTimeout: () => [],
+//       );
+
+//       if (placemarks.isEmpty) return '$lat, $lng';
+
+//       final p = placemarks.first;
+//       final parts = <String>[
+//         if (p.subThoroughfare?.isNotEmpty == true) p.subThoroughfare!,
+//         if (p.thoroughfare?.isNotEmpty == true)    p.thoroughfare!,
+//         if (p.subLocality?.isNotEmpty == true)     p.subLocality!,
+//         if (p.locality?.isNotEmpty == true)        p.locality!,
+//         if (p.administrativeArea?.isNotEmpty == true) p.administrativeArea!,
+//         if (p.postalCode?.isNotEmpty == true)      p.postalCode!,
+//         if (p.country?.isNotEmpty == true)         p.country!,
+//       ];
+
+//       final address = parts.join(', ');
+//       return address.isNotEmpty ? address : '$lat, $lng';
+//     } catch (e) {
+//       debugPrint('_getAddress error: $e');
+//       return '$lat, $lng';
+//     }
+//   }
+
+//   // =================== CAMERA ===================
+//   Future<void> takeSelfie() async {
+//     try {
+//       final picked = await _imagePicker.pickImage(
+//         source:               ImageSource.camera,
+//         imageQuality:         70,
+//         maxWidth:             800,
+//         maxHeight:            800,
+//         preferredCameraDevice: CameraDevice.front,
+//       );
+//       if (picked != null) {
+//         selfieFile.value = File(picked.path);
+//       }
+//     } catch (e) {
+//       _showUnableError('takeSelfie', e);
+//     }
+//   }
+
+//   void clearSelfie() => selfieFile.value = null;
+
+//   void resetScreenState() {
+//     clearSelfie();
+//     currentLat.value        = 0.0;
+//     currentLng.value        = 0.0;
+//     currentAddress.value    = '';
+//     isLocationLoading.value = false;
+//     isMarkingIn.value       = false;
+//     isMarkingOut.value      = false;
+//   }
+
+//   // =================== MARK IN ===================
+//   Future<bool> markIn() async {
+//     debugPrint('=== MARK IN DEBUG ===');
+//     debugPrint('userId          : $userId');
+//     debugPrint('userName        : $userName');
+//     debugPrint('role            : $role');
+//     debugPrint('isSelfieRequired: $isSelfieRequired');
+//     debugPrint('====================');
+
+//     if (isSelfieRequired && selfieFile.value == null) {
+//       AppUtils.showWarning('Please take a selfie first');
+//       return false;
+//     }
+//     if (currentLat.value == 0.0 || currentLng.value == 0.0) {
+//       AppUtils.showWarning('Please fetch location first');
+//       return false;
+//     }
+//     if (currentAddress.value.trim().isEmpty) {
+//       AppUtils.showWarning('Address not available. Please refresh location.');
+//       return false;
+//     }
+//     if (userName.isEmpty) {
+//       AppUtils.showError('Unable to continue. Please login again.');
+//       return false;
+//     }
+
+//     isMarkingIn.value = true;
+//     try {
+//       final today    = DateFormat('yyyy-MM-dd').format(DateTime.now());
+//       final deviceId = await _getDeviceId();
+
+//       final result = await ApiService.markIn(
+//         attendanceDate:  today,
+//         latitude:        currentLat.value,
+//         longitude:       currentLng.value,
+//         locationAddress: currentAddress.value.trim(),
+//         selfieImage:     selfieFile.value,
+//         biometricData:   deviceId,
+//         userName:        userName,
+//         userId:          userId,
+//       );
+
+//       debugPrint('markIn result: $result');
+
+//       if (result['success'] == true) {
+//         AppUtils.showSuccess('Mark-in successful!');
+//         resetScreenState();
+//         return true;
+//       } else {
+//         AppUtils.showError(result['message'] ?? 'Unable to mark attendance. Please try again.');
+//         return false;
+//       }
+//     } catch (e) {
+//       _showUnableError('markIn', e);
+//       return false;
+//     } finally {
+//       isMarkingIn.value = false;
+//     }
+//   }
+
+//   // =================== MARK OUT ===================
+//   Future<bool> markOut() async {
+//     debugPrint('=== MARK OUT DEBUG ===');
+//     debugPrint('userId          : $userId');
+//     debugPrint('userName        : $userName');
+//     debugPrint('role            : $role');
+//     debugPrint('isSelfieRequired: $isSelfieRequired');
+//     debugPrint('=====================');
+
+//     if (isSelfieRequired && selfieFile.value == null) {
+//       AppUtils.showWarning('Please take a selfie first');
+//       return false;
+//     }
+//     if (currentLat.value == 0.0 || currentLng.value == 0.0) {
+//       AppUtils.showWarning('Please fetch location first');
+//       return false;
+//     }
+//     if (currentAddress.value.trim().isEmpty) {
+//       AppUtils.showWarning('Address not available. Please refresh location.');
+//       return false;
+//     }
+//     if (userName.isEmpty) {
+//       AppUtils.showError('Unable to continue. Please login again.');
+//       return false;
+//     }
+
+//     isMarkingOut.value = true;
+//     try {
+//       final today    = DateFormat('yyyy-MM-dd').format(DateTime.now());
+//       final deviceId = await _getDeviceId();
+
+//       final result = await ApiService.markOut(
+//         attendanceDate:  today,
+//         latitude:        currentLat.value,
+//         longitude:       currentLng.value,
+//         locationAddress: currentAddress.value.trim(),
+//         selfieImage:     selfieFile.value,
+//         biometricData:   deviceId,
+//         userName:        userName,
+//         userId:          userId,
+//       );
+
+//       debugPrint('markOut result: $result');
+
+//       if (result['success'] == true) {
+//         AppUtils.showSuccess('Mark-out successful!');
+//         resetScreenState();
+//         return true;
+//       } else {
+//         AppUtils.showError(result['message'] ?? 'Unable to mark out. Please try again.');
+//         return false;
+//       }
+//     } catch (e) {
+//       _showUnableError('markOut', e);
+//       return false;
+//     } finally {
+//       isMarkingOut.value = false;
+//     }
+//   }
+
+//   // =================== SUMMARY ===================
+//   Future<void> fetchUserSummary() async {
+//     final diff = toDate.value.difference(fromDate.value).inDays;
+//     if (diff > 31) {
+//       AppUtils.showError('Unable to load summary. Date range cannot exceed 31 days.');
+//       return;
+//     }
+
+//     isFetchingSummary.value = true;
+//     try {
+//       final records = await ApiService.getUserSummary(
+//         fromDate: AppUtils.formatDateApi(fromDate.value),
+//         toDate:   AppUtils.formatDateApi(toDate.value),
+//       );
+//       attendanceRecords.value = records;
+//     } catch (e) {
+//       _showUnableError('fetchUserSummary', e);
+//     } finally {
+//       isFetchingSummary.value = false;
+//     }
+//   }
+
+//   // =================== DATE PICKERS ===================
+//   Future<void> pickFromDate(BuildContext context) async {
+//     final picked = await showDatePicker(
+//       context:     context,
+//       initialDate: fromDate.value,
+//       firstDate:   DateTime(2020),
+//       lastDate:    DateTime.now(),
+//     );
+//     if (picked != null) {
+//       fromDate.value = picked;
+//       if (toDate.value.isBefore(picked)) toDate.value = picked;
+//     }
+//   }
+
+//   Future<void> pickToDate(BuildContext context) async {
+//     final picked = await showDatePicker(
+//       context:     context,
+//       initialDate: toDate.value,
+//       firstDate:   fromDate.value,
+//       lastDate:    DateTime.now(),
+//     );
+//     if (picked != null) toDate.value = picked;
+//   }
+
+//   // =================== SUMMARY STATS ===================
+//   int get totalPresent =>
+//       attendanceRecords.where((r) => r.status == 'Complete').length;
+
+//   int get totalIncomplete =>
+//       attendanceRecords.where((r) => r.status != 'Complete').length;
+
+//   double get totalWorkHours => attendanceRecords.fold(
+//         0,
+//         (sum, r) => sum + (r.totalHours ?? 0),
+//       );
+
+//   // =================== PERIOD SUMMARY STATS ===================
+//   int get totalDaysInRange =>
+//       toDate.value.difference(fromDate.value).inDays + 1;
+
+//   int get totalSundays {
+//     int count = 0;
+//     DateTime d = fromDate.value;
+//     while (!d.isAfter(toDate.value)) {
+//       if (d.weekday == DateTime.sunday) count++;
+//       d = d.add(const Duration(days: 1));
+//     }
+//     return count;
+//   }
+
+//   int get totalAbsent {
+//     final workingDays = totalDaysInRange - totalSundays;
+//     return (workingDays - totalPresent).clamp(0, workingDays);
+//   }
+// }
+
+
+
+
+
+
+
+
+
+
+// lib/controllers/attendance_controller.dart
+
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:intl/intl.dart';
 
 import '../models/models.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
-import '../services/location_service.dart';
 import '../core/utils/app_utils.dart';
 
 class AttendanceController extends GetxController {
   // =================== STATE ===================
-  final isMarkingIn = false.obs;
-  final isMarkingOut = false.obs;
+  final isMarkingIn       = false.obs;
+  final isMarkingOut      = false.obs;
   final isFetchingSummary = false.obs;
 
-  final selfieFile = Rxn<File>();
-  final currentLat = 0.0.obs;
-  final currentLng = 0.0.obs;
-  final currentAddress = ''.obs;
-  final isLocationLoading = false.obs;
+  // ✅ Search button tap hone ke baad hi true hoga
+  final hasSearched = false.obs;
 
-  final attendanceRecords = <AttendanceRecord>[].obs;
-  final markedInData = Rxn<MarkInData>();
-  final markedOutData = Rxn<MarkOutData>();
+  final selfieFile          = Rxn<File>();
+  final currentLat          = 0.0.obs;
+  final currentLng          = 0.0.obs;
+  final currentAddress      = ''.obs;
+  final isLocationLoading   = false.obs;
+
+  final attendanceRecords   = <AttendanceRecord>[].obs;
+  final markedInData        = Rxn<MarkInData>();
+  final markedOutData       = Rxn<MarkOutData>();
 
   // Summary Filters
   final fromDate = DateTime(DateTime.now().year, DateTime.now().month, 1).obs;
-  final toDate = DateTime.now().obs;
+  final toDate   = DateTime.now().obs;
 
   final _imagePicker = ImagePicker();
 
   // =================== USER INFO ===================
-  int get userId => StorageService.getUserId();
-  String get userName => StorageService.getUserName();
-  String get role => StorageService.getUserRole();
+  int    get userId           => StorageService.getUserId();
+  String get userName         => StorageService.getUserName();
+  String get role             => StorageService.getUserRole();
+  bool   get isSelfieRequired => StorageService.getRequiresSelfie();
 
-  // =================== SELFIE REQUIRED CHECK ===================
-  bool get isSelfieRequired => StorageService.getRequiresSelfie();
-
-  // =================== ERROR HANDLER (USER-FRIENDLY) ===================
+  // =================== ERROR HANDLER ===================
   void _showUnableError(String context, dynamic e) {
-    // Developer log only
     debugPrint('$context error: $e');
 
     final msg = e.toString();
-
-    // Optional network friendly message
     if (msg.contains('SocketException')) {
       AppUtils.showError('Unable to connect. Please check your internet and try again.');
       return;
@@ -385,7 +1167,6 @@ class AttendanceController extends GetxController {
       return;
     }
 
-    // Context-wise "Unable..." messages
     switch (context) {
       case 'fetchLocation':
         AppUtils.showError('Unable to fetch location. Please enable GPS and try again.');
@@ -427,20 +1208,36 @@ class AttendanceController extends GetxController {
   Future<void> fetchLocation() async {
     isLocationLoading.value = true;
     try {
-      final position = await LocationService.getCurrentPosition();
-      if (position != null) {
-        currentLat.value = position.latitude;
-        currentLng.value = position.longitude;
-
-        final addr = await LocationService.getAddressFromCoordinates(
-          position.latitude,
-          position.longitude,
-        );
-
-        currentAddress.value = addr.trim();
-      } else {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
         AppUtils.showError('Unable to fetch location. Please enable GPS and try again.');
+        return;
       }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          AppUtils.showError('Location permission denied. Please allow location access.');
+          return;
+        }
+      }
+      if (permission == LocationPermission.deniedForever) {
+        AppUtils.showError('Location permission permanently denied. Please enable from Settings.');
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit:       const Duration(seconds: 15),
+      );
+
+      currentLat.value = position.latitude;
+      currentLng.value = position.longitude;
+
+      final addr = await _getAddress(position.latitude, position.longitude);
+      currentAddress.value = addr.trim();
+
     } catch (e) {
       _showUnableError('fetchLocation', e);
     } finally {
@@ -448,14 +1245,44 @@ class AttendanceController extends GetxController {
     }
   }
 
+  Future<String> _getAddress(double lat, double lng) async {
+    try {
+      final placemarks = await placemarkFromCoordinates(
+        lat, lng,
+      ).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => [],
+      );
+
+      if (placemarks.isEmpty) return '$lat, $lng';
+
+      final p = placemarks.first;
+      final parts = <String>[
+        if (p.subThoroughfare?.isNotEmpty == true) p.subThoroughfare!,
+        if (p.thoroughfare?.isNotEmpty == true)    p.thoroughfare!,
+        if (p.subLocality?.isNotEmpty == true)     p.subLocality!,
+        if (p.locality?.isNotEmpty == true)        p.locality!,
+        if (p.administrativeArea?.isNotEmpty == true) p.administrativeArea!,
+        if (p.postalCode?.isNotEmpty == true)      p.postalCode!,
+        if (p.country?.isNotEmpty == true)         p.country!,
+      ];
+
+      final address = parts.join(', ');
+      return address.isNotEmpty ? address : '$lat, $lng';
+    } catch (e) {
+      debugPrint('_getAddress error: $e');
+      return '$lat, $lng';
+    }
+  }
+
   // =================== CAMERA ===================
   Future<void> takeSelfie() async {
     try {
       final picked = await _imagePicker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 70,
-        maxWidth: 800,
-        maxHeight: 800,
+        source:                ImageSource.camera,
+        imageQuality:          70,
+        maxWidth:              800,
+        maxHeight:             800,
         preferredCameraDevice: CameraDevice.front,
       );
       if (picked != null) {
@@ -470,12 +1297,12 @@ class AttendanceController extends GetxController {
 
   void resetScreenState() {
     clearSelfie();
-    currentLat.value = 0.0;
-    currentLng.value = 0.0;
-    currentAddress.value = '';
+    currentLat.value        = 0.0;
+    currentLng.value        = 0.0;
+    currentAddress.value    = '';
     isLocationLoading.value = false;
-    isMarkingIn.value = false;
-    isMarkingOut.value = false;
+    isMarkingIn.value       = false;
+    isMarkingOut.value      = false;
   }
 
   // =================== MARK IN ===================
@@ -491,37 +1318,33 @@ class AttendanceController extends GetxController {
       AppUtils.showWarning('Please take a selfie first');
       return false;
     }
-
     if (currentLat.value == 0.0 || currentLng.value == 0.0) {
       AppUtils.showWarning('Please fetch location first');
       return false;
     }
-
     if (currentAddress.value.trim().isEmpty) {
       AppUtils.showWarning('Address not available. Please refresh location.');
       return false;
     }
-
     if (userName.isEmpty) {
       AppUtils.showError('Unable to continue. Please login again.');
       return false;
     }
 
     isMarkingIn.value = true;
-
     try {
-      final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      final today    = DateFormat('yyyy-MM-dd').format(DateTime.now());
       final deviceId = await _getDeviceId();
 
       final result = await ApiService.markIn(
-        attendanceDate: today,
-        latitude: currentLat.value,
-        longitude: currentLng.value,
+        attendanceDate:  today,
+        latitude:        currentLat.value,
+        longitude:       currentLng.value,
         locationAddress: currentAddress.value.trim(),
-        selfieImage: selfieFile.value,
-        biometricData: deviceId,
-        userName: userName,
-        userId: userId,
+        selfieImage:     selfieFile.value,
+        biometricData:   deviceId,
+        userName:        userName,
+        userId:          userId,
       );
 
       debugPrint('markIn result: $result');
@@ -555,37 +1378,33 @@ class AttendanceController extends GetxController {
       AppUtils.showWarning('Please take a selfie first');
       return false;
     }
-
     if (currentLat.value == 0.0 || currentLng.value == 0.0) {
       AppUtils.showWarning('Please fetch location first');
       return false;
     }
-
     if (currentAddress.value.trim().isEmpty) {
       AppUtils.showWarning('Address not available. Please refresh location.');
       return false;
     }
-
     if (userName.isEmpty) {
       AppUtils.showError('Unable to continue. Please login again.');
       return false;
     }
 
     isMarkingOut.value = true;
-
     try {
-      final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      final today    = DateFormat('yyyy-MM-dd').format(DateTime.now());
       final deviceId = await _getDeviceId();
 
       final result = await ApiService.markOut(
-        attendanceDate: today,
-        latitude: currentLat.value,
-        longitude: currentLng.value,
+        attendanceDate:  today,
+        latitude:        currentLat.value,
+        longitude:       currentLng.value,
         locationAddress: currentAddress.value.trim(),
-        selfieImage: selfieFile.value,
-        biometricData: deviceId,
-        userName: userName,
-        userId: userId,
+        selfieImage:     selfieFile.value,
+        biometricData:   deviceId,
+        userName:        userName,
+        userId:          userId,
       );
 
       debugPrint('markOut result: $result');
@@ -618,9 +1437,12 @@ class AttendanceController extends GetxController {
     try {
       final records = await ApiService.getUserSummary(
         fromDate: AppUtils.formatDateApi(fromDate.value),
-        toDate: AppUtils.formatDateApi(toDate.value),
+        toDate:   AppUtils.formatDateApi(toDate.value),
       );
       attendanceRecords.value = records;
+
+      // ✅ Search ho gaya — ab data dikhao
+      hasSearched.value = true;
     } catch (e) {
       _showUnableError('fetchUserSummary', e);
     } finally {
@@ -631,25 +1453,23 @@ class AttendanceController extends GetxController {
   // =================== DATE PICKERS ===================
   Future<void> pickFromDate(BuildContext context) async {
     final picked = await showDatePicker(
-      context: context,
+      context:     context,
       initialDate: fromDate.value,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
+      firstDate:   DateTime(2020),
+      lastDate:    DateTime.now(),
     );
     if (picked != null) {
       fromDate.value = picked;
-      if (toDate.value.isBefore(picked)) {
-        toDate.value = picked;
-      }
+      if (toDate.value.isBefore(picked)) toDate.value = picked;
     }
   }
 
   Future<void> pickToDate(BuildContext context) async {
     final picked = await showDatePicker(
-      context: context,
+      context:     context,
       initialDate: toDate.value,
-      firstDate: fromDate.value,
-      lastDate: DateTime.now(),
+      firstDate:   fromDate.value,
+      lastDate:    DateTime.now(),
     );
     if (picked != null) toDate.value = picked;
   }
@@ -667,9 +1487,8 @@ class AttendanceController extends GetxController {
       );
 
   // =================== PERIOD SUMMARY STATS ===================
-  int get totalDaysInRange {
-    return toDate.value.difference(fromDate.value).inDays + 1;
-  }
+  int get totalDaysInRange =>
+      toDate.value.difference(fromDate.value).inDays + 1;
 
   int get totalSundays {
     int count = 0;

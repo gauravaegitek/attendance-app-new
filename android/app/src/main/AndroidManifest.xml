@@ -27,13 +27,12 @@
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.USE_FINGERPRINT" />
 
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
-
     <application
         android:label="Attendance App"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
-        android:usesCleartextTraffic="true">
+        android:usesCleartextTraffic="true"
+        android:enableOnBackInvokedCallback="true">
 
         <activity
             android:name=".MainActivity"
@@ -54,8 +53,14 @@
             </intent-filter>
         </activity>
 
+        <!-- ✅ Geolocator service startup pe auto-start nahi hogi -->
+        <service
+            android:name="com.baseflow.geolocator.GeolocatorService"
+            android:enabled="false"
+            android:exported="false" />
+
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
     </application>
-</manifest> 
+</manifest>

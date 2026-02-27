@@ -986,7 +986,7 @@ import 'package:get/get.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/daily_task_controller.dart';
 import '../controllers/leave_controller.dart';
-import '../controllers/location_controller.dart';
+// import '../controllers/location_controller.dart';
 import '../controllers/wfh_controller.dart';
 import '../controllers/notification_controller.dart';
 import '../screens/splash_screen.dart';
@@ -1008,9 +1008,9 @@ import '../screens/notification/notification_screen.dart';
 import '../screens/help_support/help_support_screen.dart';
 import '../screens/leave/leave_screen.dart';
 import '../screens/daily_task/daily_task_screen.dart';
-import '../screens/location/my_location_screen.dart';
-import '../screens/location/location_history_screen.dart';
-import '../screens/location/admin_location_screen.dart';
+// import '../screens/location/my_location_screen.dart';
+// import '../screens/location/location_history_screen.dart';
+// import '../screens/location/admin_location_screen.dart';
 
 class AppRoutes {
   static const String splash             = '/';
@@ -1033,9 +1033,9 @@ class AppRoutes {
   static const String helpSupport        = '/help-support';
   static const String leave              = '/leave';
   static const String dailyTask          = '/daily-tasks';
-  static const String myLocation         = '/my-location';
-  static const String locationHistory    = '/location-history';
-  static const String adminLocation      = '/admin-location';
+  // static const String myLocation         = '/my-location';
+  // static const String locationHistory    = '/location-history';
+  // static const String adminLocation      = '/admin-location';
 
   static List<GetPage> pages = [
 
@@ -1073,9 +1073,9 @@ class AppRoutes {
         if (!Get.isRegistered<DailyTaskController>()) {
           Get.put(DailyTaskController());
         }
-        if (!Get.isRegistered<LocationController>()) {
-          Get.put(LocationController());
-        }
+        // if (!Get.isRegistered<LocationController>()) {
+        //   Get.put(LocationController());
+        // }
       }),
     ),
 
@@ -1190,37 +1190,37 @@ class AppRoutes {
     ),
 
     // ── Location: User ────────────────────────────────────────────────────
-    GetPage(
-      name: myLocation,
-      page: () => const MyLocationScreen(),
-      binding: BindingsBuilder(() {
-        if (!Get.isRegistered<LocationController>()) {
-          Get.put(LocationController());
-        }
-      }),
-    ),
-    GetPage(
-      name: locationHistory,
-      page: () => const LocationHistoryScreen(),
-      binding: BindingsBuilder(() {
-        if (!Get.isRegistered<LocationController>()) {
-          Get.put(LocationController());
-        }
-      }),
-    ),
+    // GetPage(
+    //   name: myLocation,
+    //   page: () => const MyLocationScreen(),
+    //   binding: BindingsBuilder(() {
+    //     if (!Get.isRegistered<LocationController>()) {
+    //       Get.put(LocationController());
+    //     }
+    //   }),
+    // ),
+    // GetPage(
+    //   name: locationHistory,
+    //   page: () => const LocationHistoryScreen(),
+    //   binding: BindingsBuilder(() {
+    //     if (!Get.isRegistered<LocationController>()) {
+    //       Get.put(LocationController());
+    //     }
+    //   }),
+    // ),
 
-    // ── Location: Admin only ──────────────────────────────────────────────
-    GetPage(
-      name: adminLocation,
-      page: () => const AdminLocationScreen(),
-      binding: BindingsBuilder(() {
-        if (!Get.isRegistered<LocationController>()) {
-          Get.put(LocationController());
-        }
-        if (!Get.isRegistered<AuthController>()) {
-          Get.put(AuthController());
-        }
-      }),
-    ),
+    // // ── Location: Admin only ──────────────────────────────────────────────
+    // GetPage(
+    //   name: adminLocation,
+    //   page: () => const AdminLocationScreen(),
+    //   binding: BindingsBuilder(() {
+    //     if (!Get.isRegistered<LocationController>()) {
+    //       Get.put(LocationController());
+    //     }
+    //     if (!Get.isRegistered<AuthController>()) {
+    //       Get.put(AuthController());
+    //     }
+    //   }),
+    // ),
   ];
 }
