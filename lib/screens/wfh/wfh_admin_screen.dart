@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/wfh_controller.dart';
+import '../../core/utils/response_handler.dart';
 import '../../models/wfh_model.dart';
 
 class WfhAdminScreen extends StatelessWidget {
@@ -50,15 +51,9 @@ class WfhAdminScreen extends StatelessWidget {
             itemBuilder: (_, i) => _AdminWfhCard(
               item: ctrl.allRequests[i],
               onApprove: (id) async {
-                final ok = await ctrl.approveWFH(
+                await ctrl.approveWFH(
                   wfhId: id,
-                  action: 'Approved', // ✅ Capital
-                );
-                Get.snackbar(
-                  ok ? 'Approved' : 'Failed',
-                  ok ? 'WFH approved successfully' : 'Something went wrong',
-                  backgroundColor: ok ? Colors.green : Colors.red,
-                  colorText: Colors.white,
+                  action: 'Approved',
                 );
               },
               onReject: (id) => _showRejectDialog(context, ctrl, id),
@@ -91,16 +86,10 @@ class WfhAdminScreen extends StatelessWidget {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               Navigator.pop(ctx);
-              final ok = await ctrl.approveWFH(
+              await ctrl.approveWFH(
                 wfhId: wfhId,
-                action: 'Rejected', // ✅ Capital
+                action: 'Rejected',
                 rejectionReason: reasonCtrl.text.trim(),
-              );
-              Get.snackbar(
-                ok ? 'Rejected' : 'Failed',
-                ok ? 'WFH rejected' : 'Something went wrong',
-                backgroundColor: ok ? Colors.orange : Colors.red,
-                colorText: Colors.white,
               );
             },
             child: const Text('Reject', style: TextStyle(color: Colors.white)),

@@ -586,6 +586,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../core/utils/response_handler.dart';
 import 'storage_service.dart';
 
 class ActivityService extends GetxService with WidgetsBindingObserver {
@@ -821,16 +822,8 @@ class ActivityService extends GetxService with WidgetsBindingObserver {
     Get.offAllNamed('/login');
 
     await Future.delayed(const Duration(milliseconds: 300));
-    Get.snackbar(
-      'Session Expired',
+    ResponseHandler.showInfo(
       'You were logged out due to inactivity.',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFF0A1628),
-      colorText: Colors.white,
-      borderRadius: 12,
-      margin: const EdgeInsets.all(16),
-      icon: const Icon(Icons.logout_rounded, color: Colors.white),
-      duration: const Duration(seconds: 4),
     );
   }
 

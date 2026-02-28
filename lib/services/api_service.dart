@@ -6936,7 +6936,7 @@ class ApiService {
     }
   }
 
-  static Future<bool> cancelLeave(int leaveId) async {
+  static Future<ApiResponse<void>> cancelLeave(int leaveId) async {
     try {
       final response = await http
           .delete(
@@ -6950,10 +6950,13 @@ class ApiService {
 
       _checkSession(response);
 
-      return response.statusCode == 200;
+      final data    = jsonDecode(response.body);
+      final success = response.statusCode == 200 && (data['success'] == true);
+      final message = (data['message'] ?? '').toString();
+      return ApiResponse(success: success, message: message);
     } catch (e) {
       debugPrint('cancelLeave error: $e');
-      return false;
+      return ApiResponse(success: false, message: e.toString());
     }
   }
 
@@ -7137,7 +7140,7 @@ class ApiService {
     }
   }
 
-  static Future<bool> deleteDailyTask(int taskId) async {
+  static Future<ApiResponse<void>> deleteDailyTask(int taskId) async {
     try {
       final response = await http
           .delete(
@@ -7149,10 +7152,14 @@ class ApiService {
 
       debugPrint('deleteDailyTask [$taskId] status: ${response.statusCode}');
       _checkSession(response);
-      return response.statusCode == 200;
+
+      final data    = jsonDecode(response.body);
+      final success = response.statusCode == 200 && (data['success'] == true);
+      final message = (data['message'] ?? '').toString();
+      return ApiResponse(success: success, message: message);
     } catch (e) {
       debugPrint('deleteDailyTask error: $e');
-      return false;
+      return ApiResponse(success: false, message: e.toString());
     }
   }
 

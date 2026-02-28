@@ -1085,6 +1085,7 @@ import '../../controllers/performance_controller.dart';
 import '../../models/performance_model.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/app_utils.dart';
+import '../../core/utils/response_handler.dart';
 import 'widgets/month_year_picker.dart';
 
 class RankingScreen extends StatefulWidget {
@@ -1106,7 +1107,10 @@ class _RankingScreenState extends State<RankingScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_auth.isAdmin) {
         Get.back();
-        AppUtils.showError('Access denied. Admin only.');
+        ResponseHandler.showError(
+          apiMessage: '',
+          fallback: 'Access denied. Admin only.',
+        );
         return;
       }
       _load();

@@ -158,6 +158,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/wfh_controller.dart';
+import '../../core/utils/response_handler.dart';
 import '../../models/wfh_model.dart';
 
 class MyWfhScreen extends StatelessWidget {
@@ -245,19 +246,13 @@ class MyWfhScreen extends StatelessWidget {
           ElevatedButton(
             onPressed: () async {
               if (reasonCtrl.text.trim().isEmpty) {
-                Get.snackbar('Error', 'Please enter a reason');
+                ResponseHandler.showWarning('Please enter a reason for WFH request.');
                 return;
               }
               Navigator.pop(ctx);
-              final ok = await ctrl.requestWFH(
+              await ctrl.requestWFH(
                 wfhDate: selectedDate!.toIso8601String(),
                 reason: reasonCtrl.text.trim(),
-              );
-              Get.snackbar(
-                ok ? 'Success' : 'Failed',
-                ok ? 'WFH request submitted!' : 'Something went wrong',
-                backgroundColor: ok ? Colors.green : Colors.red,
-                colorText: Colors.white,
               );
             },
             child: const Text('Submit'),

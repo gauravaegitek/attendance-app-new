@@ -1807,6 +1807,7 @@ import 'package:get_storage/get_storage.dart';
 import '../../controllers/auth_controller.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/app_utils.dart';
+import '../../core/utils/response_handler.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -1947,17 +1948,8 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   void _showComingSoon() {
-    Get.snackbar(
-      '🚧 Coming Soon',
-      'Forgot Password feature will be available soon!',
-      backgroundColor: const Color(0xFF050B14),
-      colorText: Colors.white,
-      icon: const Icon(Icons.construction_rounded,
-          color: Color(0xFFF59E0B)),
-      snackPosition: SnackPosition.BOTTOM,
-      margin: const EdgeInsets.all(16),
-      borderRadius: 14,
-      duration: const Duration(seconds: 3),
+    ResponseHandler.showInfo(
+      'Forgot Password feature will be available soon! 🚧',
     );
   }
 

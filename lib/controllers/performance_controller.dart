@@ -1,24 +1,25 @@
 // lib/controllers/performance_controller.dart
 
 import 'package:get/get.dart';
-
 import '../models/performance_model.dart';
 import '../services/performance_api_service.dart';
+import '../core/utils/response_handler.dart';
 
 class PerformanceController extends GetxController {
   // ─── Loading ───────────────────────────────────────────────────────────────
-  final isLoadingScore     = false.obs;
-  final isLoadingRanking   = false.obs;
-  final isLoadingReviews   = false.obs;
-  final isSubmittingReview = false.obs;
-  final isLoadingRoles     = false.obs;
+  final isLoadingScore       = false.obs;
+  final isLoadingRanking     = false.obs;
+  final isLoadingReviews     = false.obs;
+  final isSubmittingReview   = false.obs;
+  final isLoadingRoles       = false.obs;
+  final isLoadingMyReviews   = false.obs;
 
   // ─── Data ──────────────────────────────────────────────────────────────────
   final employeeScore = Rxn<EmployeeScoreModel>();
   final rankings      = <RankingModel>[].obs;
   final reviews       = <ReviewModel>[].obs;
+  final myReviews     = <ReviewModel>[].obs;
 
-  // ✅ Roles from /api/Role — department filter ke liye
   final rolesList = <String>[].obs;
 
   // ─── Filter state ──────────────────────────────────────────────────────────
@@ -26,30 +27,90 @@ class PerformanceController extends GetxController {
   final selectedYear  = DateTime.now().year.obs;
   final selectedDept  = ''.obs;
 
+  final fromDate = Rx<DateTime>(
+    DateTime(DateTime.now().year, DateTime.now().month, 1),
+  );
+  final toDate = Rx<DateTime>(
+    DateTime(DateTime.now().year, DateTime.now().month + 1, 0),
+  );
+
   // ─── Error ─────────────────────────────────────────────────────────────────
-  final errorScore   = ''.obs;
-  final errorRanking = ''.obs;
-  final errorReviews = ''.obs;
+  final errorScore     = ''.obs;
+  final errorRanking   = ''.obs;
+  final errorReviews   = ''.obs;
+  final errorMyReviews = ''.obs;
 
   // ===========================================================================
-  // Fetch: Roles from /api/Role
-  // ===========================================================================
+
+  void setDateRange({required DateTime from, required DateTime to}) {
+    fromDate.value = from;
+    toDate.value   = to;
+  }
+
+  Future<void> fetchMyReviews({
+    required DateTime fromDate,
+    required DateTime toDate,
+  }) async {
+    isLoadingMyReviews.value = true;
+    errorMyReviews.value     = '';
+    myReviews.clear();
+
+    try {
+      final months = <({int month, int year})>[];
+      var cursor   = DateTime(fromDate.year, fromDate.month, 1);
+      final end    = DateTime(toDate.year, toDate.month, 1);
+
+      while (!cursor.isAfter(end)) {
+        months.add((month: cursor.month, year: cursor.year));
+        cursor = DateTime(cursor.year, cursor.month + 1, 1);
+      }
+
+      final results = await Future.wait<List<ReviewModel>>(
+        months.map(
+          (m) => PerformanceApiService.getMyReviews(
+            month: m.month,
+            year:  m.year,
+          ),
+        ),
+      );
+
+      final combined = results.expand<ReviewModel>((r) => r).toList()
+        ..sort((a, b) {
+          final cmpYear = b.year.compareTo(a.year);
+          if (cmpYear != 0) return cmpYear;
+          return b.month.compareTo(a.month);
+        });
+
+      myReviews.assignAll(combined);
+
+      if (combined.isEmpty) {
+        errorMyReviews.value = 'No reviews found for selected period.';
+      }
+    } catch (e) {
+      errorMyReviews.value = 'Unable to load reviews. Please try again.';
+      ResponseHandler.handleException(
+        e,
+        context: 'fetchMyReviews',
+        fallback: 'Unable to load reviews. Please try again.',
+      );
+    } finally {
+      isLoadingMyReviews.value = false;
+    }
+  }
+
   Future<void> fetchRoles() async {
-    if (rolesList.isNotEmpty) return; // already loaded
+    if (rolesList.isNotEmpty) return;
     isLoadingRoles.value = true;
     try {
       final result = await PerformanceApiService.getRoles();
       rolesList.value = result;
-    } catch (e) {
-      // silent fail — chips nahi dikhenge
+    } catch (_) {
+      // silent
     } finally {
       isLoadingRoles.value = false;
     }
   }
 
-  // ===========================================================================
-  // Fetch: Employee Score
-  // ===========================================================================
   Future<void> fetchEmployeeScore({
     required int month,
     required int year,
@@ -66,19 +127,21 @@ class PerformanceController extends GetxController {
       employeeScore.value = result;
       if (result == null) errorScore.value = 'No score data found.';
     } catch (e) {
-      errorScore.value = 'Failed to load score: $e';
+      errorScore.value = 'Unable to load score. Please try again.';
+      ResponseHandler.handleException(
+        e,
+        context: 'fetchEmployeeScore',
+        fallback: 'Unable to load score. Please try again.',
+      );
     } finally {
       isLoadingScore.value = false;
     }
   }
 
-  // ===========================================================================
-  // Fetch: Rankings
-  // ===========================================================================
   Future<void> fetchRanking({
     required int month,
     required int year,
-    String? department,
+    String?      department,
   }) async {
     isLoadingRanking.value = true;
     errorRanking.value     = '';
@@ -91,15 +154,17 @@ class PerformanceController extends GetxController {
       rankings.value = result;
       if (result.isEmpty) errorRanking.value = 'No ranking data found.';
     } catch (e) {
-      errorRanking.value = 'Failed to load rankings: $e';
+      errorRanking.value = 'Unable to load rankings. Please try again.';
+      ResponseHandler.handleException(
+        e,
+        context: 'fetchRanking',
+        fallback: 'Unable to load rankings. Please try again.',
+      );
     } finally {
       isLoadingRanking.value = false;
     }
   }
 
-  // ===========================================================================
-  // Fetch: Reviews
-  // ===========================================================================
   Future<void> fetchReviews({
     required int month,
     required int year,
@@ -113,48 +178,50 @@ class PerformanceController extends GetxController {
       );
       reviews.value = result;
     } catch (e) {
-      errorReviews.value = 'Failed to load reviews: $e';
+      errorReviews.value = 'Unable to load reviews. Please try again.';
+      ResponseHandler.handleException(
+        e,
+        context: 'fetchReviews',
+        fallback: 'Unable to load reviews. Please try again.',
+      );
     } finally {
       isLoadingReviews.value = false;
     }
   }
 
-  // ===========================================================================
-  // Submit: Review (Admin only)
-  // ===========================================================================
+  // ─── Submit Review (Admin) ─────────────────────────────────────────────────
   Future<bool> submitReview(ReviewRequestModel request) async {
     isSubmittingReview.value = true;
     try {
-      final success = await PerformanceApiService.submitReview(request);
-      if (success) {
-        Get.snackbar(
-          'Success',
-          'Review submitted successfully',
-          snackPosition: SnackPosition.BOTTOM,
+      final res = await PerformanceApiService.submitReview(request);
+
+      if (res.success) {
+        ResponseHandler.showSuccess(
+          apiMessage: res.message,
+          fallback:   'Saved successfully.',
         );
         await fetchReviews(month: request.month, year: request.year);
         return true;
       } else {
-        Get.snackbar(
-          'Error',
-          'Failed to submit review. Please try again.',
-          snackPosition: SnackPosition.BOTTOM,
+        ResponseHandler.showError(
+          apiMessage: res.message,
+          fallback:   'Unable to submit review. Please try again.',
         );
         return false;
       }
     } catch (e) {
-      Get.snackbar('Error', e.toString(),
-          snackPosition: SnackPosition.BOTTOM);
+      ResponseHandler.handleException(
+        e,
+        context: 'submitReview',
+        fallback: 'Unable to submit review. Please try again.',
+      );
       return false;
     } finally {
       isSubmittingReview.value = false;
     }
   }
 
-  // ===========================================================================
-  // Helpers
-  // ===========================================================================
-
+  // ─── Helpers ──────────────────────────────────────────────────────────────
   void setMonthYear(int month, int year) {
     selectedMonth.value = month;
     selectedYear.value  = year;

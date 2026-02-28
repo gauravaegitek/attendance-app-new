@@ -1,3 +1,177 @@
+// // lib/models/performance_model.dart
+
+// class EmployeeScoreModel {
+//   final int userId;
+//   final String userName;
+//   final String? role;
+//   final String? department;
+//   final int month;
+//   final int year;
+//   final int? totalWorkingDays;
+//   final int? presentDays;
+//   final int? wfhDays;
+//   final int? absentDays;
+//   final double? attendancePercentage;
+//   final double? averageWorkingHours;
+//   final double? performanceScore;
+//   final String? grade;
+//   final double? autoScore;
+//   final double? manualScore;
+//   final String? comments;
+
+//   EmployeeScoreModel({
+//     required this.userId,
+//     required this.userName,
+//     this.role,
+//     this.department,
+//     required this.month,
+//     required this.year,
+//     this.totalWorkingDays,
+//     this.presentDays,
+//     this.wfhDays,
+//     this.absentDays,
+//     this.attendancePercentage,
+//     this.averageWorkingHours,
+//     this.performanceScore,
+//     this.grade,
+//     this.autoScore,
+//     this.manualScore,
+//     this.comments,
+//   });
+
+//   double get finalScore => manualScore ?? performanceScore ?? 0.0;
+
+//   factory EmployeeScoreModel.fromJson(Map<String, dynamic> json) {
+//     return EmployeeScoreModel(
+//       userId:               json['userId']               ?? 0,
+//       userName:             json['userName']?.toString() ?? '',
+//       role:                 json['role'],
+//       department:           json['department'],
+//       month:                json['month']                ?? 0,
+//       year:                 json['year']                 ?? 0,
+//       totalWorkingDays:     json['totalWorkingDays'],
+//       presentDays:          json['presentDays'],
+//       wfhDays:              json['wfhDays'],
+//       absentDays:           json['absentDays'],
+//       attendancePercentage: (json['attendancePercentage'] as num?)?.toDouble(),
+//       averageWorkingHours:  (json['averageWorkingHours']  as num?)?.toDouble(),
+//       performanceScore:     (json['performanceScore']     as num?)?.toDouble(),
+//       grade:                json['grade'],
+//       autoScore:            (json['autoScore']            as num?)?.toDouble(),
+//       manualScore:          (json['manualScore']          as num?)?.toDouble(),
+//       comments:             json['comments'],
+//     );
+//   }
+// }
+
+// class RankingModel {
+//   final int rank;
+//   final int userId;
+//   final String userName;
+//   final String? department;
+//   final double? performanceScore;
+//   final String? grade;
+//   final int? presentDays;
+//   final double? attendancePercentage;
+
+//   RankingModel({
+//     required this.rank,
+//     required this.userId,
+//     required this.userName,
+//     this.department,
+//     this.performanceScore,
+//     this.grade,
+//     this.presentDays,
+//     this.attendancePercentage,
+//   });
+
+//   double get finalScore => performanceScore ?? 0.0;
+
+//   factory RankingModel.fromJson(Map<String, dynamic> json) {
+//     return RankingModel(
+//       rank:                 json['rank']                                 ?? 0,
+//       userId:               json['userId']                               ?? 0,
+//       userName:             json['userName']?.toString()                 ?? '',
+//       department:           json['department'],
+//       performanceScore:     (json['performanceScore']     as num?)?.toDouble(),
+//       grade:                json['grade'],
+//       presentDays:          json['presentDays'],
+//       attendancePercentage: (json['attendancePercentage'] as num?)?.toDouble(),
+//     );
+//   }
+// }
+
+// class ReviewModel {
+//   final int id;
+//   final int userId;
+//   final String userName;
+//   final int month;
+//   final int year;
+//   final double? manualScore;
+//   final String? comments;
+//   final String? reviewedBy;
+//   final DateTime? reviewedAt;
+
+//   ReviewModel({
+//     required this.id,
+//     required this.userId,
+//     required this.userName,
+//     required this.month,
+//     required this.year,
+//     this.manualScore,
+//     this.comments,
+//     this.reviewedBy,
+//     this.reviewedAt,
+//   });
+
+//   factory ReviewModel.fromJson(Map<String, dynamic> json) {
+//     return ReviewModel(
+//       id:         json['id']       ?? 0,
+//       userId:     json['userId']   ?? 0,
+//       userName:   json['userName']?.toString() ?? '',
+//       month:      json['month']    ?? 0,
+//       year:       json['year']     ?? 0,
+//       manualScore:(json['manualScore'] as num?)?.toDouble(),
+//       comments:   json['comments'],
+//       reviewedBy: json['reviewedBy'],
+//       reviewedAt: json['reviewedAt'] != null
+//           ? DateTime.tryParse(json['reviewedAt'])
+//           : null,
+//     );
+//   }
+// }
+
+// class ReviewRequestModel {
+//   final int userId;
+//   final int month;
+//   final int year;
+//   final double manualScore;
+//   final String comments;
+
+//   ReviewRequestModel({
+//     required this.userId,
+//     required this.month,
+//     required this.year,
+//     required this.manualScore,
+//     required this.comments,
+//   });
+
+//   Map<String, dynamic> toJson() => {
+//         'userId':      userId,
+//         'month':       month,
+//         'year':        year,
+//         'manualScore': manualScore,
+//         'comments':    comments,
+//       };
+// }
+
+
+
+
+
+
+
+
 // lib/models/performance_model.dart
 
 class EmployeeScoreModel {
@@ -43,23 +217,23 @@ class EmployeeScoreModel {
 
   factory EmployeeScoreModel.fromJson(Map<String, dynamic> json) {
     return EmployeeScoreModel(
-      userId:               json['userId']               ?? 0,
-      userName:             json['userName']?.toString() ?? '',
-      role:                 json['role'],
-      department:           json['department'],
-      month:                json['month']                ?? 0,
-      year:                 json['year']                 ?? 0,
-      totalWorkingDays:     json['totalWorkingDays'],
-      presentDays:          json['presentDays'],
-      wfhDays:              json['wfhDays'],
-      absentDays:           json['absentDays'],
+      userId: json['userId'] ?? 0,
+      userName: json['userName']?.toString() ?? '',
+      role: json['role'],
+      department: json['department'],
+      month: json['month'] ?? 0,
+      year: json['year'] ?? 0,
+      totalWorkingDays: json['totalWorkingDays'],
+      presentDays: json['presentDays'],
+      wfhDays: json['wfhDays'],
+      absentDays: json['absentDays'],
       attendancePercentage: (json['attendancePercentage'] as num?)?.toDouble(),
-      averageWorkingHours:  (json['averageWorkingHours']  as num?)?.toDouble(),
-      performanceScore:     (json['performanceScore']     as num?)?.toDouble(),
-      grade:                json['grade'],
-      autoScore:            (json['autoScore']            as num?)?.toDouble(),
-      manualScore:          (json['manualScore']          as num?)?.toDouble(),
-      comments:             json['comments'],
+      averageWorkingHours: (json['averageWorkingHours'] as num?)?.toDouble(),
+      performanceScore: (json['performanceScore'] as num?)?.toDouble(),
+      grade: json['grade'],
+      autoScore: (json['autoScore'] as num?)?.toDouble(),
+      manualScore: (json['manualScore'] as num?)?.toDouble(),
+      comments: json['comments'],
     );
   }
 }
@@ -89,20 +263,22 @@ class RankingModel {
 
   factory RankingModel.fromJson(Map<String, dynamic> json) {
     return RankingModel(
-      rank:                 json['rank']                                 ?? 0,
-      userId:               json['userId']                               ?? 0,
-      userName:             json['userName']?.toString()                 ?? '',
-      department:           json['department'],
-      performanceScore:     (json['performanceScore']     as num?)?.toDouble(),
-      grade:                json['grade'],
-      presentDays:          json['presentDays'],
+      rank: json['rank'] ?? 0,
+      userId: json['userId'] ?? 0,
+      userName: json['userName']?.toString() ?? '',
+      department: json['department'],
+      performanceScore: (json['performanceScore'] as num?)?.toDouble(),
+      grade: json['grade'],
+      presentDays: json['presentDays'],
       attendancePercentage: (json['attendancePercentage'] as num?)?.toDouble(),
     );
   }
 }
 
 class ReviewModel {
-  final int id;
+  // ✅ Backend always sends reviewId
+  final int reviewId;
+
   final int userId;
   final String userName;
   final int month;
@@ -112,8 +288,15 @@ class ReviewModel {
   final String? reviewedBy;
   final DateTime? reviewedAt;
 
+  // optional fields from API (you had createdOn in logs)
+  final String? role;
+  final double? attendanceScore;
+  final double? finalScore;
+  final String? grade;
+  final String? createdOnRaw;
+
   ReviewModel({
-    required this.id,
+    required this.reviewId,
     required this.userId,
     required this.userName,
     required this.month,
@@ -122,17 +305,27 @@ class ReviewModel {
     this.comments,
     this.reviewedBy,
     this.reviewedAt,
+    this.role,
+    this.attendanceScore,
+    this.finalScore,
+    this.grade,
+    this.createdOnRaw,
   });
 
   factory ReviewModel.fromJson(Map<String, dynamic> json) {
     return ReviewModel(
-      id:         json['id']       ?? 0,
-      userId:     json['userId']   ?? 0,
-      userName:   json['userName']?.toString() ?? '',
-      month:      json['month']    ?? 0,
-      year:       json['year']     ?? 0,
-      manualScore:(json['manualScore'] as num?)?.toDouble(),
-      comments:   json['comments'],
+      reviewId: json['reviewId'] ?? 0,
+      userId: json['userId'] ?? 0,
+      userName: json['userName']?.toString() ?? '',
+      role: json['role']?.toString(),
+      month: json['month'] ?? 0,
+      year: json['year'] ?? 0,
+      attendanceScore: (json['attendanceScore'] as num?)?.toDouble(),
+      manualScore: (json['manualScore'] as num?)?.toDouble(),
+      finalScore: (json['finalScore'] as num?)?.toDouble(),
+      grade: json['grade']?.toString(),
+      comments: json['comments'],
+      createdOnRaw: json['createdOn']?.toString(),
       reviewedBy: json['reviewedBy'],
       reviewedAt: json['reviewedAt'] != null
           ? DateTime.tryParse(json['reviewedAt'])
@@ -142,6 +335,9 @@ class ReviewModel {
 }
 
 class ReviewRequestModel {
+  // ✅ optional (only for update/edit)
+  final int? reviewId;
+
   final int userId;
   final int month;
   final int year;
@@ -149,6 +345,7 @@ class ReviewRequestModel {
   final String comments;
 
   ReviewRequestModel({
+    this.reviewId,
     required this.userId,
     required this.month,
     required this.year,
@@ -156,11 +353,42 @@ class ReviewRequestModel {
     required this.comments,
   });
 
-  Map<String, dynamic> toJson() => {
-        'userId':      userId,
-        'month':       month,
-        'year':        year,
-        'manualScore': manualScore,
-        'comments':    comments,
-      };
+  Map<String, dynamic> toJson() {
+    final map = <String, dynamic>{
+      'userId': userId,
+      'month': month,
+      'year': year,
+      'manualScore': manualScore,
+      'comments': comments,
+    };
+
+    // ✅ send only if editing
+    if (reviewId != null && reviewId! > 0) {
+      map['reviewId'] = reviewId;
+    }
+    return map;
+  }
+}
+
+/// ✅ API submit response wrapper
+class SubmitReviewResponse {
+  final bool success;
+  final String message;
+  final ReviewModel? data;
+
+  SubmitReviewResponse({
+    required this.success,
+    required this.message,
+    this.data,
+  });
+
+  factory SubmitReviewResponse.fromJson(Map<String, dynamic> json) {
+    return SubmitReviewResponse(
+      success: json['success'] == true,
+      message: (json['message'] ?? '').toString(),
+      data: (json['data'] != null && json['data'] is Map<String, dynamic>)
+          ? ReviewModel.fromJson(json['data'] as Map<String, dynamic>)
+          : null,
+    );
+  }
 }

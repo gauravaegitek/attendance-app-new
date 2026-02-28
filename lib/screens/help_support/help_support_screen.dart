@@ -4772,6 +4772,7 @@ import 'package:intl/intl.dart';
 
 import '../../controllers/auth_controller.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/response_handler.dart';
 import '../../models/help_support_model.dart';
 import '../../services/api_service.dart';
 
@@ -4940,21 +4941,11 @@ class _HelpSupportScreenState extends State<HelpSupportScreen>
   }
 
   void _showSnack(String msg, {bool isError = false}) {
-    Get.snackbar(
-      isError ? 'Error' : 'Success',
-      msg,
-      backgroundColor: isError ? AppTheme.error : AppTheme.success,
-      colorText:       Colors.white,
-      icon: Icon(
-        isError
-            ? Icons.error_outline
-            : Icons.check_circle_outline,
-        color: Colors.white,
-      ),
-      snackPosition: SnackPosition.TOP,
-      margin:        const EdgeInsets.all(16),
-      borderRadius:  14,
-    );
+    if (isError) {
+      ResponseHandler.showError(apiMessage: '', fallback: msg);
+    } else {
+      ResponseHandler.showSuccess(apiMessage: '', fallback: msg);
+    }
   }
 
   // ─── ADD FAQ DIALOG ────────────────────────────────────

@@ -1,918 +1,3 @@
-// // lib/controllers/daily_task_controller.dart
-
-// import 'package:flutter/material.dart';
-// import 'package:get/get.dart';
-// import 'package:intl/intl.dart';
-
-// import '../models/daily_task_model.dart';
-// import '../services/api_service.dart';
-
-// class DailyTaskController extends GetxController {
-//   // ── User: my tasks ────────────────────────────────────────
-//   final myTasks        = <DailyTaskModel>[].obs;
-//   final todayMyTasks   = <DailyTaskModel>[].obs;
-//   final isLoadingMy    = false.obs;
-//   final isLoadingToday = false.obs;
-
-//   // ── Admin: all tasks ──────────────────────────────────────
-//   final allTasks          = <DailyTaskModel>[].obs;
-//   final todayAllTasks     = <DailyTaskModel>[].obs;
-//   final isLoadingAll      = false.obs;
-//   final isLoadingAllToday = false.obs;
-
-//   // ── Add/Edit form ─────────────────────────────────────────
-//   final isSubmitting = false.obs;
-
-//   final taskTitleCtrl       = TextEditingController();
-//   final taskDescCtrl        = TextEditingController();
-//   final projectNameCtrl     = TextEditingController();
-//   final remarksCtrl         = TextEditingController();
-//   final hoursSpentCtrl      = TextEditingController();
-//   final selectedStatus      = 'Pending'.obs;
-//   final selectedTaskDate    = Rx<DateTime>(DateTime.now());
-
-//   final statusOptions = ['Pending', 'In Progress', 'Completed'];
-
-//   // ── Filters ───────────────────────────────────────────────
-//   final filterStatus   = 'All'.obs;
-//   final filterFromDate = Rx<DateTime?>(null);
-//   final filterToDate   = Rx<DateTime?>(null);
-
-//   @override
-//   void onInit() {
-//     super.onInit();
-//     fetchTodayMyTasks();
-//     fetchMyTasks();
-//   }
-
-//   @override
-//   void onClose() {
-//     taskTitleCtrl.dispose();
-//     taskDescCtrl.dispose();
-//     projectNameCtrl.dispose();
-//     remarksCtrl.dispose();
-//     hoursSpentCtrl.dispose();
-//     super.onClose();
-//   }
-
-//   // ─────────────────────────────────────────────────────────
-//   //  USER: Today's tasks
-//   // ─────────────────────────────────────────────────────────
-//   Future<void> fetchTodayMyTasks() async {
-//     isLoadingToday.value = true;
-//     try {
-//       final tasks = await ApiService.getMyTasksToday();
-//       todayMyTasks.assignAll(tasks);
-//     } catch (e) {
-//       _showSnack('Failed to load today tasks: $e', isError: true);
-//     } finally {
-//       isLoadingToday.value = false;
-//     }
-//   }
-
-//   // ─────────────────────────────────────────────────────────
-//   //  USER: My tasks with filters
-//   // ─────────────────────────────────────────────────────────
-//   Future<void> fetchMyTasks() async {
-//     isLoadingMy.value = true;
-//     try {
-//       final status = filterStatus.value == 'All' ? null : filterStatus.value;
-//       final tasks = await ApiService.getMyTasks(
-//         status:   status,
-//         fromDate: filterFromDate.value != null
-//             ? DateFormat('yyyy-MM-dd').format(filterFromDate.value!)
-//             : null,
-//         toDate: filterToDate.value != null
-//             ? DateFormat('yyyy-MM-dd').format(filterToDate.value!)
-//             : null,
-//       );
-//       myTasks.assignAll(tasks);
-//     } catch (e) {
-//       _showSnack('Failed to load tasks: $e', isError: true);
-//     } finally {
-//       isLoadingMy.value = false;
-//     }
-//   }
-
-//   // ─────────────────────────────────────────────────────────
-//   //  USER: Add task
-//   // ─────────────────────────────────────────────────────────
-//   Future<bool> addTask() async {
-//     if (taskTitleCtrl.text.trim().isEmpty) {
-//       _showSnack('Task title required', isError: true);
-//       return false;
-//     }
-//     if (projectNameCtrl.text.trim().isEmpty) {
-//       _showSnack('Project name required', isError: true);
-//       return false;
-//     }
-
-//     isSubmitting.value = true;
-//     try {
-//       final result = await ApiService.addDailyTask(
-//         taskDate:        DateFormat("yyyy-MM-dd'T'HH:mm:ss.000'Z'")
-//             .format(selectedTaskDate.value),
-//         taskTitle:       taskTitleCtrl.text.trim(),
-//         taskDescription: taskDescCtrl.text.trim(),
-//         projectName:     projectNameCtrl.text.trim(),
-//         status:          selectedStatus.value,
-//         hoursSpent:      double.tryParse(hoursSpentCtrl.text.trim()) ?? 0,
-//         remarks:         remarksCtrl.text.trim(),
-//       );
-//       if (result.success) {
-//         _showSnack('Task added successfully!');
-//         _clearForm();
-//         await fetchTodayMyTasks();
-//         await fetchMyTasks();
-//         return true;
-//       } else {
-//         _showSnack(result.message.isNotEmpty ? result.message : 'Add failed',
-//             isError: true);
-//         return false;
-//       }
-//     } catch (e) {
-//       _showSnack('Error: $e', isError: true);
-//       return false;
-//     } finally {
-//       isSubmitting.value = false;
-//     }
-//   }
-
-//   // ─────────────────────────────────────────────────────────
-//   //  USER: Update task
-//   // ─────────────────────────────────────────────────────────
-//   Future<bool> updateTask(int taskId) async {
-//     if (taskTitleCtrl.text.trim().isEmpty) {
-//       _showSnack('Task title required', isError: true);
-//       return false;
-//     }
-
-//     isSubmitting.value = true;
-//     try {
-//       final result = await ApiService.updateDailyTask(
-//         taskId:          taskId,
-//         taskTitle:       taskTitleCtrl.text.trim(),
-//         taskDescription: taskDescCtrl.text.trim(),
-//         projectName:     projectNameCtrl.text.trim(),
-//         status:          selectedStatus.value,
-//         hoursSpent:      double.tryParse(hoursSpentCtrl.text.trim()) ?? 0,
-//         remarks:         remarksCtrl.text.trim(),
-//       );
-//       if (result.success) {
-//         _showSnack('Task updated!');
-//         _clearForm();
-//         await fetchTodayMyTasks();
-//         await fetchMyTasks();
-//         return true;
-//       } else {
-//         _showSnack(result.message.isNotEmpty ? result.message : 'Update failed',
-//             isError: true);
-//         return false;
-//       }
-//     } catch (e) {
-//       _showSnack('Error: $e', isError: true);
-//       return false;
-//     } finally {
-//       isSubmitting.value = false;
-//     }
-//   }
-
-//   // ─────────────────────────────────────────────────────────
-//   //  USER: Delete task
-//   // ─────────────────────────────────────────────────────────
-//   Future<void> deleteTask(int taskId) async {
-//     try {
-//       final success = await ApiService.deleteDailyTask(taskId);
-//       if (success) {
-//         _showSnack('Task deleted');
-//         await fetchTodayMyTasks();
-//         await fetchMyTasks();
-//       } else {
-//         _showSnack('Delete failed', isError: true);
-//       }
-//     } catch (e) {
-//       _showSnack('Error: $e', isError: true);
-//     }
-//   }
-
-//   // ─────────────────────────────────────────────────────────
-//   //  ADMIN: All today tasks
-//   // ─────────────────────────────────────────────────────────
-//   Future<void> fetchAllTasksToday() async {
-//     isLoadingAllToday.value = true;
-//     try {
-//       final tasks = await ApiService.getAllTasksToday();
-//       todayAllTasks.assignAll(tasks);
-//     } catch (e) {
-//       _showSnack('Failed to load tasks: $e', isError: true);
-//     } finally {
-//       isLoadingAllToday.value = false;
-//     }
-//   }
-
-//   // ─────────────────────────────────────────────────────────
-//   //  ADMIN: All tasks with filters
-//   // ─────────────────────────────────────────────────────────
-//   Future<void> fetchAllTasks({int? userId}) async {
-//     isLoadingAll.value = true;
-//     try {
-//       final status = filterStatus.value == 'All' ? null : filterStatus.value;
-//       final tasks = await ApiService.getAllTasks(
-//         userId:   userId,
-//         status:   status,
-//         fromDate: filterFromDate.value != null
-//             ? DateFormat('yyyy-MM-dd').format(filterFromDate.value!)
-//             : null,
-//         toDate: filterToDate.value != null
-//             ? DateFormat('yyyy-MM-dd').format(filterToDate.value!)
-//             : null,
-//       );
-//       allTasks.assignAll(tasks);
-//     } catch (e) {
-//       _showSnack('Failed to load tasks: $e', isError: true);
-//     } finally {
-//       isLoadingAll.value = false;
-//     }
-//   }
-
-//   // ─────────────────────────────────────────────────────────
-//   //  HELPERS
-//   // ─────────────────────────────────────────────────────────
-//   void prefillForEdit(DailyTaskModel task) {
-//     taskTitleCtrl.text       = task.taskTitle;
-//     taskDescCtrl.text        = task.taskDescription;
-//     projectNameCtrl.text     = task.projectName;
-//     remarksCtrl.text         = task.remarks;
-//     hoursSpentCtrl.text      = task.hoursSpent.toString();
-//     selectedStatus.value     = task.status;
-//     selectedTaskDate.value   =
-//         DateTime.tryParse(task.taskDate) ?? DateTime.now();
-//   }
-
-//   void _clearForm() {
-//     taskTitleCtrl.clear();
-//     taskDescCtrl.clear();
-//     projectNameCtrl.clear();
-//     remarksCtrl.clear();
-//     hoursSpentCtrl.clear();
-//     selectedStatus.value   = 'Pending';
-//     selectedTaskDate.value = DateTime.now();
-//   }
-
-//   void _showSnack(String msg, {bool isError = false}) {
-//     Get.snackbar(
-//       isError ? 'Error' : 'Success',
-//       msg,
-//       snackPosition:   SnackPosition.BOTTOM,
-//       backgroundColor: isError
-//           ? const Color(0xFFEF4444)
-//           : const Color(0xFF22C55E),
-//       colorText:    const Color(0xFFFFFFFF),
-//       margin:       const EdgeInsets.all(16),
-//       borderRadius: 14,
-//     );
-//   }
-// }
-
-
-
-
-
-
-
-
-
-// // lib/controllers/daily_task_controller.dart
-
-// import 'package:flutter/material.dart';
-// import 'package:get/get.dart';
-// import 'package:intl/intl.dart';
-
-// import '../models/daily_task_model.dart';
-// import '../services/api_service.dart';
-
-// class DailyTaskController extends GetxController {
-//   // ── User: my tasks ────────────────────────────────────────
-//   final myTasks        = <DailyTaskModel>[].obs;
-//   final todayMyTasks   = <DailyTaskModel>[].obs;
-//   final isLoadingMy    = false.obs;
-//   final isLoadingToday = false.obs;
-
-//   // ── Admin: all tasks ──────────────────────────────────────
-//   final allTasks          = <DailyTaskModel>[].obs;
-//   final todayAllTasks     = <DailyTaskModel>[].obs;
-//   final isLoadingAll      = false.obs;
-//   final isLoadingAllToday = false.obs;
-
-//   // ── Add/Edit form ─────────────────────────────────────────
-//   final isSubmitting = false.obs;
-
-//   final taskTitleCtrl       = TextEditingController();
-//   final taskDescCtrl        = TextEditingController();
-//   final projectNameCtrl     = TextEditingController();
-//   final remarksCtrl         = TextEditingController();
-//   final hoursSpentCtrl      = TextEditingController();
-//   final selectedStatus      = 'Pending'.obs;
-//   final selectedTaskDate    = Rx<DateTime>(DateTime.now());
-
-//   final statusOptions = ['Pending', 'In Progress', 'Completed'];
-
-//   // ── Filters ───────────────────────────────────────────────
-//   final filterStatus   = 'All'.obs;
-//   final filterFromDate = Rx<DateTime?>(null);
-//   final filterToDate   = Rx<DateTime?>(null);
-
-//   @override
-//   void onInit() {
-//     super.onInit();
-//     fetchTodayMyTasks();
-//     fetchMyTasks();
-//   }
-
-//   @override
-//   void onClose() {
-//     taskTitleCtrl.dispose();
-//     taskDescCtrl.dispose();
-//     projectNameCtrl.dispose();
-//     remarksCtrl.dispose();
-//     hoursSpentCtrl.dispose();
-//     super.onClose();
-//   }
-
-//   // ─────────────────────────────────────────────────────────
-//   //  STATUS NORMALIZER  ← FIX: converts API lowercase → Title Case
-//   // ─────────────────────────────────────────────────────────
-//   String _normalizeStatus(String raw) {
-//     switch (raw.toLowerCase().trim()) {
-//       case 'completed':
-//         return 'Completed';
-//       case 'in progress':
-//         return 'In Progress';
-//       case 'pending':
-//       default:
-//         return 'Pending';
-//     }
-//   }
-
-//   // ─────────────────────────────────────────────────────────
-//   //  USER: Today's tasks
-//   // ─────────────────────────────────────────────────────────
-//   Future<void> fetchTodayMyTasks() async {
-//     isLoadingToday.value = true;
-//     try {
-//       final tasks = await ApiService.getMyTasksToday();
-//       todayMyTasks.assignAll(tasks);
-//     } catch (e) {
-//       _showSnack('Failed to load today tasks: $e', isError: true);
-//     } finally {
-//       isLoadingToday.value = false;
-//     }
-//   }
-
-//   // ─────────────────────────────────────────────────────────
-//   //  USER: My tasks with filters
-//   // ─────────────────────────────────────────────────────────
-//   Future<void> fetchMyTasks() async {
-//     isLoadingMy.value = true;
-//     try {
-//       final status = filterStatus.value == 'All' ? null : filterStatus.value;
-//       final tasks = await ApiService.getMyTasks(
-//         status:   status,
-//         fromDate: filterFromDate.value != null
-//             ? DateFormat('yyyy-MM-dd').format(filterFromDate.value!)
-//             : null,
-//         toDate: filterToDate.value != null
-//             ? DateFormat('yyyy-MM-dd').format(filterToDate.value!)
-//             : null,
-//       );
-//       myTasks.assignAll(tasks);
-//     } catch (e) {
-//       _showSnack('Failed to load tasks: $e', isError: true);
-//     } finally {
-//       isLoadingMy.value = false;
-//     }
-//   }
-
-//   // ─────────────────────────────────────────────────────────
-//   //  USER: Add task
-//   // ─────────────────────────────────────────────────────────
-//   Future<bool> addTask() async {
-//     if (taskTitleCtrl.text.trim().isEmpty) {
-//       _showSnack('Task title required', isError: true);
-//       return false;
-//     }
-//     if (projectNameCtrl.text.trim().isEmpty) {
-//       _showSnack('Project name required', isError: true);
-//       return false;
-//     }
-
-//     isSubmitting.value = true;
-//     try {
-//       final result = await ApiService.addDailyTask(
-//         taskDate:        DateFormat("yyyy-MM-dd'T'HH:mm:ss.000'Z'")
-//             .format(selectedTaskDate.value),
-//         taskTitle:       taskTitleCtrl.text.trim(),
-//         taskDescription: taskDescCtrl.text.trim(),
-//         projectName:     projectNameCtrl.text.trim(),
-//         status:          selectedStatus.value,
-//         hoursSpent:      double.tryParse(hoursSpentCtrl.text.trim()) ?? 0,
-//         remarks:         remarksCtrl.text.trim(),
-//       );
-//       if (result.success) {
-//         _showSnack('Task added successfully!');
-//         _clearForm();
-//         await fetchTodayMyTasks();
-//         await fetchMyTasks();
-//         return true;
-//       } else {
-//         _showSnack(result.message.isNotEmpty ? result.message : 'Add failed',
-//             isError: true);
-//         return false;
-//       }
-//     } catch (e) {
-//       _showSnack('Error: $e', isError: true);
-//       return false;
-//     } finally {
-//       isSubmitting.value = false;
-//     }
-//   }
-
-//   // ─────────────────────────────────────────────────────────
-//   //  USER: Update task
-//   // ─────────────────────────────────────────────────────────
-//   Future<bool> updateTask(int taskId) async {
-//     if (taskTitleCtrl.text.trim().isEmpty) {
-//       _showSnack('Task title required', isError: true);
-//       return false;
-//     }
-
-//     isSubmitting.value = true;
-//     try {
-//       final result = await ApiService.updateDailyTask(
-//         taskId:          taskId,
-//         taskTitle:       taskTitleCtrl.text.trim(),
-//         taskDescription: taskDescCtrl.text.trim(),
-//         projectName:     projectNameCtrl.text.trim(),
-//         status:          selectedStatus.value,
-//         hoursSpent:      double.tryParse(hoursSpentCtrl.text.trim()) ?? 0,
-//         remarks:         remarksCtrl.text.trim(),
-//       );
-//       if (result.success) {
-//         _showSnack('Task updated!');
-//         _clearForm();
-//         await fetchTodayMyTasks();
-//         await fetchMyTasks();
-//         return true;
-//       } else {
-//         _showSnack(result.message.isNotEmpty ? result.message : 'Update failed',
-//             isError: true);
-//         return false;
-//       }
-//     } catch (e) {
-//       _showSnack('Error: $e', isError: true);
-//       return false;
-//     } finally {
-//       isSubmitting.value = false;
-//     }
-//   }
-
-//   // ─────────────────────────────────────────────────────────
-//   //  USER: Delete task
-//   // ─────────────────────────────────────────────────────────
-//   Future<void> deleteTask(int taskId) async {
-//     try {
-//       final success = await ApiService.deleteDailyTask(taskId);
-//       if (success) {
-//         _showSnack('Task deleted');
-//         await fetchTodayMyTasks();
-//         await fetchMyTasks();
-//       } else {
-//         _showSnack('Delete failed', isError: true);
-//       }
-//     } catch (e) {
-//       _showSnack('Error: $e', isError: true);
-//     }
-//   }
-
-//   // ─────────────────────────────────────────────────────────
-//   //  ADMIN: All today tasks
-//   // ─────────────────────────────────────────────────────────
-//   Future<void> fetchAllTasksToday() async {
-//     isLoadingAllToday.value = true;
-//     try {
-//       final tasks = await ApiService.getAllTasksToday();
-//       todayAllTasks.assignAll(tasks);
-//     } catch (e) {
-//       _showSnack('Failed to load tasks: $e', isError: true);
-//     } finally {
-//       isLoadingAllToday.value = false;
-//     }
-//   }
-
-//   // ─────────────────────────────────────────────────────────
-//   //  ADMIN: All tasks with filters
-//   // ─────────────────────────────────────────────────────────
-//   Future<void> fetchAllTasks({int? userId}) async {
-//     isLoadingAll.value = true;
-//     try {
-//       final status = filterStatus.value == 'All' ? null : filterStatus.value;
-//       final tasks = await ApiService.getAllTasks(
-//         userId:   userId,
-//         status:   status,
-//         fromDate: filterFromDate.value != null
-//             ? DateFormat('yyyy-MM-dd').format(filterFromDate.value!)
-//             : null,
-//         toDate: filterToDate.value != null
-//             ? DateFormat('yyyy-MM-dd').format(filterToDate.value!)
-//             : null,
-//       );
-//       allTasks.assignAll(tasks);
-//     } catch (e) {
-//       _showSnack('Failed to load tasks: $e', isError: true);
-//     } finally {
-//       isLoadingAll.value = false;
-//     }
-//   }
-
-//   // ─────────────────────────────────────────────────────────
-//   //  HELPERS
-//   // ─────────────────────────────────────────────────────────
-
-//   /// Prefill edit form — status is normalized from API lowercase → Title Case
-//   void prefillForEdit(DailyTaskModel task) {
-//     taskTitleCtrl.text     = task.taskTitle;
-//     taskDescCtrl.text      = task.taskDescription;
-//     projectNameCtrl.text   = task.projectName;
-//     remarksCtrl.text       = task.remarks;
-//     hoursSpentCtrl.text    = task.hoursSpent.toString();
-//     selectedStatus.value   = _normalizeStatus(task.status); // ← FIX
-//     selectedTaskDate.value = DateTime.tryParse(task.taskDate) ?? DateTime.now();
-//   }
-
-//   /// Call this whenever edit sheet is closed without saving
-//   void clearForm() => _clearForm();
-
-//   void _clearForm() {
-//     taskTitleCtrl.clear();
-//     taskDescCtrl.clear();
-//     projectNameCtrl.clear();
-//     remarksCtrl.clear();
-//     hoursSpentCtrl.clear();
-//     selectedStatus.value   = 'Pending';
-//     selectedTaskDate.value = DateTime.now();
-//   }
-
-//   void _showSnack(String msg, {bool isError = false}) {
-//     Get.snackbar(
-//       isError ? 'Error' : 'Success',
-//       msg,
-//       snackPosition:   SnackPosition.TOP,
-//       backgroundColor: isError
-//           ? const Color(0xFFEF4444)
-//           : const Color(0xFF22C55E),
-//       colorText:    const Color(0xFFFFFFFF),
-//       margin:       const EdgeInsets.all(16),
-//       borderRadius: 14,
-//     );
-//   }
-// }
-
-
-
-
-
-
-// // lib/controllers/daily_task_controller.dart
-
-// import 'package:flutter/material.dart';
-// import 'package:get/get.dart';
-// import 'package:intl/intl.dart';
-
-// import '../models/daily_task_model.dart';
-// import '../services/api_service.dart';
-
-// class DailyTaskController extends GetxController {
-//   // ── User: my tasks ────────────────────────────────────────
-//   final myTasks        = <DailyTaskModel>[].obs;
-//   final todayMyTasks   = <DailyTaskModel>[].obs;
-//   final isLoadingMy    = false.obs;
-//   final isLoadingToday = false.obs;
-
-//   // ── Admin: all tasks ──────────────────────────────────────
-//   final allTasks          = <DailyTaskModel>[].obs;
-//   final todayAllTasks     = <DailyTaskModel>[].obs;
-//   final isLoadingAll      = false.obs;
-//   final isLoadingAllToday = false.obs;
-
-//   // ── Add/Edit form ─────────────────────────────────────────
-//   final isSubmitting = false.obs;
-
-//   final taskTitleCtrl    = TextEditingController();
-//   final taskDescCtrl     = TextEditingController();
-//   final projectNameCtrl  = TextEditingController();
-//   final remarksCtrl      = TextEditingController();
-//   final hoursSpentCtrl   = TextEditingController();
-//   final selectedStatus   = 'Pending'.obs;
-//   final selectedTaskDate = Rx<DateTime>(DateTime.now());
-
-//   final statusOptions = ['Pending', 'In Progress', 'Completed'];
-
-//   // ── Filters ───────────────────────────────────────────────
-//   final filterStatus   = 'All'.obs;
-//   final filterFromDate = Rx<DateTime?>(null);
-//   final filterToDate   = Rx<DateTime?>(null);
-
-//   @override
-//   void onInit() {
-//     super.onInit();
-//     fetchTodayMyTasks();
-//     fetchMyTasks();
-//   }
-
-//   @override
-//   void onClose() {
-//     taskTitleCtrl.dispose();
-//     taskDescCtrl.dispose();
-//     projectNameCtrl.dispose();
-//     remarksCtrl.dispose();
-//     hoursSpentCtrl.dispose();
-//     super.onClose();
-//   }
-
-//   // ─────────────────────────────────────────────────────────
-//   //  API STATUS ENCODER
-//   //  UI label → API value  e.g. "In Progress" → "inprogress"
-//   // ─────────────────────────────────────────────────────────
-//   String? _encodeStatus(String filter) {
-//     if (filter == 'All') return null;
-//     switch (filter.toLowerCase().trim()) {
-//       case 'in progress': return 'inprogress';   // ← FIX
-//       case 'completed':   return 'completed';
-//       case 'pending':     return 'pending';
-//       default:            return null;
-//     }
-//   }
-
-//   // ─────────────────────────────────────────────────────────
-//   //  UI STATUS NORMALIZER
-//   //  API value → UI label  e.g. "inprogress" → "In Progress"
-//   // ─────────────────────────────────────────────────────────
-//   String _normalizeStatus(String raw) {
-//     switch (raw.toLowerCase().trim()) {
-//       case 'completed':
-//         return 'Completed';
-//       case 'inprogress':
-//       case 'in progress':
-//         return 'In Progress';
-//       case 'pending':
-//       default:
-//         return 'Pending';
-//     }
-//   }
-
-//   // ─────────────────────────────────────────────────────────
-//   //  USER: Today's tasks
-//   // ─────────────────────────────────────────────────────────
-//   Future<void> fetchTodayMyTasks() async {
-//     isLoadingToday.value = true;
-//     try {
-//       final tasks = await ApiService.getMyTasksToday();
-//       todayMyTasks.assignAll(tasks);
-//     } catch (e) {
-//       _showSnack('Failed to load today tasks: $e', isError: true);
-//     } finally {
-//       isLoadingToday.value = false;
-//     }
-//   }
-
-//   // ─────────────────────────────────────────────────────────
-//   //  USER: My tasks with filters
-//   // ─────────────────────────────────────────────────────────
-//   Future<void> fetchMyTasks() async {
-//     isLoadingMy.value = true;
-//     try {
-//       final tasks = await ApiService.getMyTasks(
-//         status:   _encodeStatus(filterStatus.value),   // ← FIX
-//         fromDate: filterFromDate.value != null
-//             ? DateFormat('yyyy-MM-dd').format(filterFromDate.value!)
-//             : null,
-//         toDate: filterToDate.value != null
-//             ? DateFormat('yyyy-MM-dd').format(filterToDate.value!)
-//             : null,
-//       );
-//       myTasks.assignAll(tasks);
-//     } catch (e) {
-//       _showSnack('Failed to load tasks: $e', isError: true);
-//     } finally {
-//       isLoadingMy.value = false;
-//     }
-//   }
-
-//   // ─────────────────────────────────────────────────────────
-//   //  USER: Add task
-//   // ─────────────────────────────────────────────────────────
-//   Future<bool> addTask() async {
-//     if (taskTitleCtrl.text.trim().isEmpty) {
-//       _showSnack('Task title required', isError: true);
-//       return false;
-//     }
-//     if (projectNameCtrl.text.trim().isEmpty) {
-//       _showSnack('Project name required', isError: true);
-//       return false;
-//     }
-
-//     isSubmitting.value = true;
-//     try {
-//       final result = await ApiService.addDailyTask(
-//         taskDate:        DateFormat("yyyy-MM-dd'T'HH:mm:ss.000'Z'")
-//             .format(selectedTaskDate.value),
-//         taskTitle:       taskTitleCtrl.text.trim(),
-//         taskDescription: taskDescCtrl.text.trim(),
-//         projectName:     projectNameCtrl.text.trim(),
-//         status:          selectedStatus.value,
-//         hoursSpent:      double.tryParse(hoursSpentCtrl.text.trim()) ?? 0,
-//         remarks:         remarksCtrl.text.trim(),
-//       );
-//       if (result.success) {
-//         _showSnack('Task added successfully!');
-//         _clearForm();
-//         await fetchTodayMyTasks();
-//         await fetchMyTasks();
-//         return true;
-//       } else {
-//         _showSnack(
-//             result.message.isNotEmpty ? result.message : 'Add failed',
-//             isError: true);
-//         return false;
-//       }
-//     } catch (e) {
-//       _showSnack('Error: $e', isError: true);
-//       return false;
-//     } finally {
-//       isSubmitting.value = false;
-//     }
-//   }
-
-//   // ─────────────────────────────────────────────────────────
-//   //  USER: Update task
-//   // ─────────────────────────────────────────────────────────
-//   Future<bool> updateTask(int taskId) async {
-//     if (taskTitleCtrl.text.trim().isEmpty) {
-//       _showSnack('Task title required', isError: true);
-//       return false;
-//     }
-
-//     isSubmitting.value = true;
-//     try {
-//       final result = await ApiService.updateDailyTask(
-//         taskId:          taskId,
-//         taskTitle:       taskTitleCtrl.text.trim(),
-//         taskDescription: taskDescCtrl.text.trim(),
-//         projectName:     projectNameCtrl.text.trim(),
-//         status:          selectedStatus.value,
-//         hoursSpent:      double.tryParse(hoursSpentCtrl.text.trim()) ?? 0,
-//         remarks:         remarksCtrl.text.trim(),
-//       );
-//       if (result.success) {
-//         _clearForm();
-//         await fetchTodayMyTasks();
-//         await fetchMyTasks();
-
-//         // ① Close the bottom sheet
-//         Get.back();
-
-//         // ② Switch to My Tasks tab (index 1)
-//         final tabCtrl = DefaultTabController.maybeOf(Get.context!);
-//         tabCtrl?.animateTo(1);
-
-//         // ③ Show success snack at TOP
-//         _showSnack('Task updated successfully!');
-
-//         return true;
-//       } else {
-//         _showSnack(
-//             result.message.isNotEmpty ? result.message : 'Update failed',
-//             isError: true);
-//         return false;
-//       }
-//     } catch (e) {
-//       _showSnack('Error: $e', isError: true);
-//       return false;
-//     } finally {
-//       isSubmitting.value = false;
-//     }
-//   }
-
-//   // ─────────────────────────────────────────────────────────
-//   //  USER: Delete task
-//   // ─────────────────────────────────────────────────────────
-//   Future<void> deleteTask(int taskId) async {
-//     try {
-//       final success = await ApiService.deleteDailyTask(taskId);
-//       if (success) {
-//         _showSnack('Task deleted');
-//         await fetchTodayMyTasks();
-//         await fetchMyTasks();
-//       } else {
-//         _showSnack('Delete failed', isError: true);
-//       }
-//     } catch (e) {
-//       _showSnack('Error: $e', isError: true);
-//     }
-//   }
-
-//   // ─────────────────────────────────────────────────────────
-//   //  ADMIN: All today tasks
-//   // ─────────────────────────────────────────────────────────
-//   Future<void> fetchAllTasksToday() async {
-//     isLoadingAllToday.value = true;
-//     try {
-//       final tasks = await ApiService.getAllTasksToday();
-//       todayAllTasks.assignAll(tasks);
-//     } catch (e) {
-//       _showSnack('Failed to load tasks: $e', isError: true);
-//     } finally {
-//       isLoadingAllToday.value = false;
-//     }
-//   }
-
-//   // ─────────────────────────────────────────────────────────
-//   //  ADMIN: All tasks with filters
-//   // ─────────────────────────────────────────────────────────
-//   Future<void> fetchAllTasks({int? userId}) async {
-//     isLoadingAll.value = true;
-//     try {
-//       final tasks = await ApiService.getAllTasks(
-//         userId:   userId,
-//         status:   _encodeStatus(filterStatus.value),   // ← FIX
-//         fromDate: filterFromDate.value != null
-//             ? DateFormat('yyyy-MM-dd').format(filterFromDate.value!)
-//             : null,
-//         toDate: filterToDate.value != null
-//             ? DateFormat('yyyy-MM-dd').format(filterToDate.value!)
-//             : null,
-//       );
-//       allTasks.assignAll(tasks);
-//     } catch (e) {
-//       _showSnack('Failed to load tasks: $e', isError: true);
-//     } finally {
-//       isLoadingAll.value = false;
-//     }
-//   }
-
-//   // ─────────────────────────────────────────────────────────
-//   //  HELPERS
-//   // ─────────────────────────────────────────────────────────
-//   void prefillForEdit(DailyTaskModel task) {
-//     taskTitleCtrl.text     = task.taskTitle;
-//     taskDescCtrl.text      = task.taskDescription;
-//     projectNameCtrl.text   = task.projectName;
-//     remarksCtrl.text       = task.remarks;
-//     hoursSpentCtrl.text    = task.hoursSpent.toString();
-//     selectedStatus.value   = _normalizeStatus(task.status);
-//     selectedTaskDate.value =
-//         DateTime.tryParse(task.taskDate) ?? DateTime.now();
-//   }
-
-//   void clearForm() => _clearForm();
-
-//   void _clearForm() {
-//     taskTitleCtrl.clear();
-//     taskDescCtrl.clear();
-//     projectNameCtrl.clear();
-//     remarksCtrl.clear();
-//     hoursSpentCtrl.clear();
-//     selectedStatus.value   = 'Pending';
-//     selectedTaskDate.value = DateTime.now();
-//   }
-
-//   // ─────────────────────────────────────────────────────────
-//   //  SNACKBAR — always TOP
-//   // ─────────────────────────────────────────────────────────
-//   void _showSnack(String msg, {bool isError = false}) {
-//     Get.snackbar(
-//       isError ? 'Error' : 'Success',
-//       msg,
-//       snackPosition:   SnackPosition.TOP,
-//       backgroundColor: isError
-//           ? const Color(0xFFEF4444)
-//           : const Color(0xFF22C55E),
-//       colorText:    const Color(0xFFFFFFFF),
-//       margin:       const EdgeInsets.all(16),
-//       borderRadius: 14,
-//       duration:     const Duration(seconds: 2),
-//     );
-//   }
-// }
-
-
-
-
-
-
-
-
-
 // lib/controllers/daily_task_controller.dart
 
 import 'package:flutter/material.dart';
@@ -921,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../models/daily_task_model.dart';
 import '../services/api_service.dart';
+import '../core/utils/response_handler.dart';
 
 class DailyTaskController extends GetxController {
   // ── User: my tasks ────────────────────────────────────────
@@ -938,19 +24,19 @@ class DailyTaskController extends GetxController {
   // ── Add/Edit form ─────────────────────────────────────────
   final isSubmitting = false.obs;
 
-  final taskTitleCtrl    = TextEditingController();
-  final taskDescCtrl     = TextEditingController();
-  final projectNameCtrl  = TextEditingController();
-  final remarksCtrl      = TextEditingController();
-  final hoursSpentCtrl   = TextEditingController();
+  final taskTitleCtrl   = TextEditingController();
+  final taskDescCtrl    = TextEditingController();
+  final projectNameCtrl = TextEditingController();
+  final remarksCtrl     = TextEditingController();
+  final hoursSpentCtrl  = TextEditingController();
   final selectedStatus   = 'Pending'.obs;
   final selectedTaskDate = Rx<DateTime>(DateTime.now());
 
   final statusOptions = ['Pending', 'In Progress', 'Completed'];
 
   // ── Separate filters for each tab ─────────────────────────
-  final myFilterStatus  = 'All'.obs;   // My Tasks tab
-  final allFilterStatus = 'All'.obs;   // Admin All Tasks tab
+  final myFilterStatus  = 'All'.obs;
+  final allFilterStatus = 'All'.obs;
 
   final filterFromDate = Rx<DateTime?>(null);
   final filterToDate   = Rx<DateTime?>(null);
@@ -958,7 +44,6 @@ class DailyTaskController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // ← FIX: no API calls on init — only on tab tap
   }
 
   @override
@@ -971,10 +56,7 @@ class DailyTaskController extends GetxController {
     super.onClose();
   }
 
-  // ─────────────────────────────────────────────────────────
-  //  API STATUS ENCODER
-  //  UI label → API value  e.g. "In Progress" → "inprogress"
-  // ─────────────────────────────────────────────────────────
+  // ─── API STATUS ENCODER ───────────────────────────────────
   String? _encodeStatus(String filter) {
     if (filter == 'All') return null;
     switch (filter.toLowerCase().trim()) {
@@ -985,41 +67,35 @@ class DailyTaskController extends GetxController {
     }
   }
 
-  // ─────────────────────────────────────────────────────────
-  //  UI STATUS NORMALIZER
-  //  API value → UI label  e.g. "inprogress" → "In Progress"
-  // ─────────────────────────────────────────────────────────
+  // ─── UI STATUS NORMALIZER ─────────────────────────────────
   String _normalizeStatus(String raw) {
     switch (raw.toLowerCase().trim()) {
-      case 'completed':
-        return 'Completed';
+      case 'completed':   return 'Completed';
       case 'inprogress':
-      case 'in progress':
-        return 'In Progress';
+      case 'in progress': return 'In Progress';
       case 'pending':
-      default:
-        return 'Pending';
+      default:            return 'Pending';
     }
   }
 
-  // ─────────────────────────────────────────────────────────
-  //  USER: Today's tasks
-  // ─────────────────────────────────────────────────────────
+  // ─── USER: Today's tasks ──────────────────────────────────
   Future<void> fetchTodayMyTasks() async {
     isLoadingToday.value = true;
     try {
       final tasks = await ApiService.getMyTasksToday();
       todayMyTasks.assignAll(tasks);
     } catch (e) {
-      _showSnack('Failed to load today tasks: $e', isError: true);
+      ResponseHandler.handleException(
+        e,
+        context: 'fetchTodayMyTasks',
+        fallback: 'Unable to load today\'s tasks. Please try again.',
+      );
     } finally {
       isLoadingToday.value = false;
     }
   }
 
-  // ─────────────────────────────────────────────────────────
-  //  USER: My tasks with filters
-  // ─────────────────────────────────────────────────────────
+  // ─── USER: My tasks with filters ──────────────────────────
   Future<void> fetchMyTasks() async {
     isLoadingMy.value = true;
     try {
@@ -1034,29 +110,31 @@ class DailyTaskController extends GetxController {
       );
       myTasks.assignAll(tasks);
     } catch (e) {
-      _showSnack('Failed to load tasks: $e', isError: true);
+      ResponseHandler.handleException(
+        e,
+        context: 'fetchMyTasks',
+        fallback: 'Unable to load tasks. Please try again.',
+      );
     } finally {
       isLoadingMy.value = false;
     }
   }
 
-  // ─────────────────────────────────────────────────────────
-  //  USER: Add task
-  // ─────────────────────────────────────────────────────────
+  // ─── USER: Add task ───────────────────────────────────────
   Future<bool> addTask() async {
     if (taskTitleCtrl.text.trim().isEmpty) {
-      _showSnack('Task title required', isError: true);
+      ResponseHandler.showWarning('Task title is required.');
       return false;
     }
     if (projectNameCtrl.text.trim().isEmpty) {
-      _showSnack('Project name required', isError: true);
+      ResponseHandler.showWarning('Project name is required.');
       return false;
     }
 
     isSubmitting.value = true;
     try {
       final result = await ApiService.addDailyTask(
-        taskDate:        DateFormat("yyyy-MM-dd'T'HH:mm:ss.000'Z'")
+        taskDate: DateFormat("yyyy-MM-dd'T'HH:mm:ss.000'Z'")
             .format(selectedTaskDate.value),
         taskTitle:       taskTitleCtrl.text.trim(),
         taskDescription: taskDescCtrl.text.trim(),
@@ -1065,30 +143,37 @@ class DailyTaskController extends GetxController {
         hoursSpent:      double.tryParse(hoursSpentCtrl.text.trim()) ?? 0,
         remarks:         remarksCtrl.text.trim(),
       );
+
       if (result.success) {
-        _showSnack('Task added successfully!');
+        ResponseHandler.showSuccess(
+          apiMessage: result.message,
+          fallback:   'Task added successfully!',
+        );
         _clearForm();
         return true;
       } else {
-        _showSnack(
-            result.message.isNotEmpty ? result.message : 'Add failed',
-            isError: true);
+        ResponseHandler.showError(
+          apiMessage: result.message,
+          fallback:   'Unable to add task. Please try again.',
+        );
         return false;
       }
     } catch (e) {
-      _showSnack('Error: $e', isError: true);
+      ResponseHandler.handleException(
+        e,
+        context: 'addTask',
+        fallback: 'Unable to add task. Please try again.',
+      );
       return false;
     } finally {
       isSubmitting.value = false;
     }
   }
 
-  // ─────────────────────────────────────────────────────────
-  //  USER: Update task
-  // ─────────────────────────────────────────────────────────
+  // ─── USER: Update task ────────────────────────────────────
   Future<bool> updateTask(int taskId) async {
     if (taskTitleCtrl.text.trim().isEmpty) {
-      _showSnack('Task title required', isError: true);
+      ResponseHandler.showWarning('Task title is required.');
       return false;
     }
 
@@ -1103,74 +188,85 @@ class DailyTaskController extends GetxController {
         hoursSpent:      double.tryParse(hoursSpentCtrl.text.trim()) ?? 0,
         remarks:         remarksCtrl.text.trim(),
       );
+
       if (result.success) {
         _clearForm();
-
-        // ① Close the bottom sheet
         Get.back();
 
-        // ② Switch to My Tasks tab (index 1)
         final tabCtrl = DefaultTabController.maybeOf(Get.context!);
         tabCtrl?.animateTo(1);
 
-        // ③ Refresh My Tasks data
         await fetchTodayMyTasks();
         await fetchMyTasks();
 
-        // ④ Show success snack at TOP
-        _showSnack('Task updated successfully!');
-
+        ResponseHandler.showSuccess(
+          apiMessage: result.message,
+          fallback:   'Task updated successfully!',
+        );
         return true;
       } else {
-        _showSnack(
-            result.message.isNotEmpty ? result.message : 'Update failed',
-            isError: true);
+        ResponseHandler.showError(
+          apiMessage: result.message,
+          fallback:   'Unable to update task. Please try again.',
+        );
         return false;
       }
     } catch (e) {
-      _showSnack('Error: $e', isError: true);
+      ResponseHandler.handleException(
+        e,
+        context: 'updateTask',
+        fallback: 'Unable to update task. Please try again.',
+      );
       return false;
     } finally {
       isSubmitting.value = false;
     }
   }
 
-  // ─────────────────────────────────────────────────────────
-  //  USER: Delete task
-  // ─────────────────────────────────────────────────────────
+  // ─── USER: Delete task ────────────────────────────────────
   Future<void> deleteTask(int taskId) async {
     try {
-      final success = await ApiService.deleteDailyTask(taskId);
-      if (success) {
-        _showSnack('Task deleted');
+      final res = await ApiService.deleteDailyTask(taskId);
+      if (res.success) {
+        ResponseHandler.showSuccess(
+          apiMessage: res.message,
+          fallback:   'Task deleted successfully.',
+        );
         await fetchTodayMyTasks();
         await fetchMyTasks();
       } else {
-        _showSnack('Delete failed', isError: true);
+        ResponseHandler.showError(
+          apiMessage: res.message,
+          fallback:   'Unable to delete task. Please try again.',
+        );
       }
     } catch (e) {
-      _showSnack('Error: $e', isError: true);
+      ResponseHandler.handleException(
+        e,
+        context: 'deleteTask',
+        fallback: 'Unable to delete task. Please try again.',
+      );
     }
   }
 
-  // ─────────────────────────────────────────────────────────
-  //  ADMIN: All today tasks
-  // ─────────────────────────────────────────────────────────
+  // ─── ADMIN: All today tasks ───────────────────────────────
   Future<void> fetchAllTasksToday() async {
     isLoadingAllToday.value = true;
     try {
       final tasks = await ApiService.getAllTasksToday();
       todayAllTasks.assignAll(tasks);
     } catch (e) {
-      _showSnack('Failed to load tasks: $e', isError: true);
+      ResponseHandler.handleException(
+        e,
+        context: 'fetchAllTasksToday',
+        fallback: 'Unable to load tasks. Please try again.',
+      );
     } finally {
       isLoadingAllToday.value = false;
     }
   }
 
-  // ─────────────────────────────────────────────────────────
-  //  ADMIN: All tasks with filters
-  // ─────────────────────────────────────────────────────────
+  // ─── ADMIN: All tasks with filters ───────────────────────
   Future<void> fetchAllTasks({int? userId}) async {
     isLoadingAll.value = true;
     try {
@@ -1186,22 +282,25 @@ class DailyTaskController extends GetxController {
       );
       allTasks.assignAll(tasks);
     } catch (e) {
-      _showSnack('Failed to load tasks: $e', isError: true);
+      ResponseHandler.handleException(
+        e,
+        context: 'fetchAllTasks',
+        fallback: 'Unable to load tasks. Please try again.',
+      );
     } finally {
       isLoadingAll.value = false;
     }
   }
 
-  // ─────────────────────────────────────────────────────────
-  //  HELPERS
-  // ─────────────────────────────────────────────────────────
+  // ─── HELPERS ──────────────────────────────────────────────
   void prefillForEdit(DailyTaskModel task) {
-    taskTitleCtrl.text     = task.taskTitle;
-    taskDescCtrl.text      = task.taskDescription;
-    projectNameCtrl.text   = task.projectName;
-    remarksCtrl.text       = task.remarks;
-    hoursSpentCtrl.text    = task.hoursSpent.toString();
-    selectedStatus.value   = _normalizeStatus(task.status);
+    taskTitleCtrl.text   = task.taskTitle;
+    taskDescCtrl.text    = task.taskDescription;
+    projectNameCtrl.text = task.projectName;
+    remarksCtrl.text     = task.remarks;
+    hoursSpentCtrl.text  = task.hoursSpent.toString();
+    selectedStatus.value =
+        _normalizeStatus(task.status);
     selectedTaskDate.value =
         DateTime.tryParse(task.taskDate) ?? DateTime.now();
   }
@@ -1216,23 +315,5 @@ class DailyTaskController extends GetxController {
     hoursSpentCtrl.clear();
     selectedStatus.value   = 'Pending';
     selectedTaskDate.value = DateTime.now();
-  }
-
-  // ─────────────────────────────────────────────────────────
-  //  SNACKBAR — always TOP
-  // ─────────────────────────────────────────────────────────
-  void _showSnack(String msg, {bool isError = false}) {
-    Get.snackbar(
-      isError ? 'Error' : 'Success',
-      msg,
-      snackPosition:   SnackPosition.TOP,
-      backgroundColor: isError
-          ? const Color(0xFFEF4444)
-          : const Color(0xFF22C55E),
-      colorText:    const Color(0xFFFFFFFF),
-      margin:       const EdgeInsets.all(16),
-      borderRadius: 14,
-      duration:     const Duration(seconds: 2),
-    );
   }
 }
