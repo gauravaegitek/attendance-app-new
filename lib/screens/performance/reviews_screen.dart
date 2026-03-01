@@ -469,15 +469,450 @@
 
 
 
+// // lib/screens/performance/reviews_screen.dart
+
+// import 'package:flutter/material.dart';
+// import 'package:flutter/services.dart';
+// import 'package:get/get.dart';
+
+// import '../../controllers/performance_controller.dart';
+// import '../../models/performance_model.dart';
+// import '../../core/theme/app_theme.dart';
+// import 'widgets/month_year_picker.dart';
+
+// class ReviewsScreen extends StatefulWidget {
+//   const ReviewsScreen({super.key});
+
+//   @override
+//   State<ReviewsScreen> createState() => _ReviewsScreenState();
+// }
+
+// class _ReviewsScreenState extends State<ReviewsScreen> {
+//   final _ctrl = Get.find<PerformanceController>();
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     _load();
+//   }
+
+//   void _load() {
+//     _ctrl.fetchReviews(
+//       month: _ctrl.selectedMonth.value,
+//       year: _ctrl.selectedYear.value,
+//     );
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       backgroundColor: AppTheme.background,
+//       appBar: AppBar(
+//         title: const Text('Performance Reviews'),
+//         centerTitle: true,
+//         actions: [
+//           IconButton(
+//             icon: const Icon(Icons.add),
+//             tooltip: 'Add Review',
+//             onPressed: () => _showReviewDialog(context),
+//           ),
+//         ],
+//       ),
+//       body: Column(
+//         children: [
+//           Obx(() => MonthYearPicker(
+//                 month: _ctrl.selectedMonth.value,
+//                 year: _ctrl.selectedYear.value,
+//                 onChanged: (m, y) {
+//                   _ctrl.setMonthYear(m, y);
+//                   _load();
+//                 },
+//               )),
+//           Expanded(
+//             child: Obx(() {
+//               if (_ctrl.isLoadingReviews.value) {
+//                 return const Center(child: CircularProgressIndicator());
+//               }
+
+//               if (_ctrl.reviews.isEmpty) {
+//                 return _EmptyView(
+//                   onAdd: () => _showReviewDialog(context),
+//                 );
+//               }
+
+//               return RefreshIndicator(
+//                 onRefresh: () async => _load(),
+//                 child: ListView.separated(
+//                   padding: const EdgeInsets.all(16),
+//                   itemCount: _ctrl.reviews.length,
+//                   separatorBuilder: (_, __) => const SizedBox(height: 8),
+//                   itemBuilder: (_, i) => _ReviewCard(
+//                     review: _ctrl.reviews[i],
+//                     onEdit: () => _showReviewDialog(
+//                       context,
+//                       existing: _ctrl.reviews[i],
+//                     ),
+//                   ),
+//                 ),
+//               );
+//             }),
+//           ),
+//         ],
+//       ),
+//       floatingActionButton: FloatingActionButton.extended(
+//         onPressed: () => _showReviewDialog(context),
+//         icon: const Icon(Icons.rate_review_outlined),
+//         label:
+//             const Text('Add Review', style: TextStyle(fontFamily: 'Poppins')),
+//       ),
+//     );
+//   }
+
+//   void _showReviewDialog(BuildContext context, {ReviewModel? existing}) {
+//     final formKey = GlobalKey<FormState>();
+
+//     final userIdCtrl =
+//         TextEditingController(text: existing?.userId.toString() ?? '');
+
+//     final scoreCtrl = TextEditingController(
+//         text: existing?.manualScore?.toStringAsFixed(1) ?? '');
+
+//     final commentsCtrl =
+//         TextEditingController(text: existing?.comments ?? '');
+
+//     showModalBottomSheet(
+//       context: context,
+//       isScrollControlled: true,
+//       backgroundColor: Colors.transparent,
+//       builder: (_) => Padding(
+//         padding: EdgeInsets.only(
+//           bottom: MediaQuery.of(context).viewInsets.bottom,
+//         ),
+//         child: Container(
+//           decoration: const BoxDecoration(
+//             color: Colors.white,
+//             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+//           ),
+//           padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+//           child: Form(
+//             key: formKey,
+//             child: Column(
+//               mainAxisSize: MainAxisSize.min,
+//               crossAxisAlignment: CrossAxisAlignment.start,
+//               children: [
+//                 Center(
+//                   child: Container(
+//                     width: 40,
+//                     height: 4,
+//                     decoration: BoxDecoration(
+//                       color: Colors.grey.shade300,
+//                       borderRadius: BorderRadius.circular(2),
+//                     ),
+//                   ),
+//                 ),
+//                 const SizedBox(height: 16),
+//                 Text(
+//                   existing != null ? 'Edit Review' : 'Submit Review',
+//                   style: const TextStyle(
+//                     fontSize: 18,
+//                     fontWeight: FontWeight.bold,
+//                     fontFamily: 'Poppins',
+//                   ),
+//                 ),
+//                 const SizedBox(height: 4),
+//                 Obx(
+//                   () => Text(
+//                     'Month: ${_ctrl.selectedMonth.value} / ${_ctrl.selectedYear.value}',
+//                     style: TextStyle(
+//                       color: Colors.grey.shade500,
+//                       fontSize: 13,
+//                       fontFamily: 'Poppins',
+//                     ),
+//                   ),
+//                 ),
+//                 const SizedBox(height: 20),
+
+//                 TextFormField(
+//                   controller: userIdCtrl,
+//                   keyboardType: TextInputType.number,
+//                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+//                   decoration: _inputDecoration(
+//                     label: 'Employee ID',
+//                     hint: 'Enter user ID',
+//                     icon: Icons.person_outline,
+//                   ),
+//                   validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+//                 ),
+//                 const SizedBox(height: 14),
+
+//                 TextFormField(
+//                   controller: scoreCtrl,
+//                   keyboardType:
+//                       const TextInputType.numberWithOptions(decimal: true),
+//                   decoration: _inputDecoration(
+//                     label: 'Manual Score (0–100)',
+//                     hint: 'e.g. 85.5',
+//                     icon: Icons.score_outlined,
+//                   ),
+//                   validator: (v) {
+//                     if (v == null || v.isEmpty) return 'Required';
+//                     final val = double.tryParse(v);
+//                     if (val == null) return 'Enter a valid number';
+//                     if (val < 0 || val > 100) return 'Score must be 0–100';
+//                     return null;
+//                   },
+//                 ),
+//                 const SizedBox(height: 14),
+
+//                 TextFormField(
+//                   controller: commentsCtrl,
+//                   maxLines: 3,
+//                   decoration: _inputDecoration(
+//                     label: 'Comments',
+//                     hint: 'Optional feedback...',
+//                     icon: Icons.comment_outlined,
+//                   ),
+//                 ),
+//                 const SizedBox(height: 24),
+
+//                 Obx(
+//                   () => SizedBox(
+//                     width: double.infinity,
+//                     height: 48,
+//                     child: ElevatedButton(
+//                       onPressed: _ctrl.isSubmittingReview.value
+//                           ? null
+//                           : () async {
+//                               if (!formKey.currentState!.validate()) return;
+
+//                               final request = ReviewRequestModel(
+//                                 // ✅ IMPORTANT: reviewId send for edit
+//                                 reviewId: existing?.reviewId,
+//                                 userId: int.parse(userIdCtrl.text),
+//                                 month: _ctrl.selectedMonth.value,
+//                                 year: _ctrl.selectedYear.value,
+//                                 manualScore: double.parse(scoreCtrl.text),
+//                                 comments: commentsCtrl.text.trim(),
+//                               );
+
+//                               final success = await _ctrl.submitReview(request);
+//                               if (success && context.mounted) {
+//                                 Navigator.pop(context);
+//                               }
+//                             },
+//                       style: ElevatedButton.styleFrom(
+//                         shape: RoundedRectangleBorder(
+//                           borderRadius: BorderRadius.circular(10),
+//                         ),
+//                       ),
+//                       child: _ctrl.isSubmittingReview.value
+//                           ? const SizedBox(
+//                               width: 20,
+//                               height: 20,
+//                               child: CircularProgressIndicator(
+//                                 strokeWidth: 2,
+//                                 color: Colors.white,
+//                               ),
+//                             )
+//                           : Text(
+//                               existing != null
+//                                   ? 'Update Review'
+//                                   : 'Submit Review',
+//                               style: const TextStyle(
+//                                 fontWeight: FontWeight.bold,
+//                                 fontFamily: 'Poppins',
+//                               ),
+//                             ),
+//                     ),
+//                   ),
+//                 ),
+//               ],
+//             ),
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+
+//   InputDecoration _inputDecoration({
+//     required String label,
+//     required String hint,
+//     required IconData icon,
+//   }) {
+//     return InputDecoration(
+//       labelText: label,
+//       hintText: hint,
+//       prefixIcon: Icon(icon, size: 20),
+//       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+//       contentPadding:
+//           const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+//     );
+//   }
+// }
+
+// class _ReviewCard extends StatelessWidget {
+//   final ReviewModel review;
+//   final VoidCallback onEdit;
+//   const _ReviewCard({required this.review, required this.onEdit});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Container(
+//       decoration: BoxDecoration(
+//         color: Colors.white,
+//         borderRadius: BorderRadius.circular(12),
+//         border: Border.all(color: Colors.grey.shade200),
+//         boxShadow: [
+//           BoxShadow(
+//             color: Colors.black.withOpacity(0.04),
+//             blurRadius: 6,
+//             offset: const Offset(0, 2),
+//           ),
+//         ],
+//       ),
+//       child: Padding(
+//         padding: const EdgeInsets.all(14),
+//         child: Column(
+//           crossAxisAlignment: CrossAxisAlignment.start,
+//           children: [
+//             Row(
+//               children: [
+//                 CircleAvatar(
+//                   radius: 18,
+//                   backgroundColor: Colors.indigo.shade50,
+//                   child: Text(
+//                     review.userName.isNotEmpty
+//                         ? review.userName[0].toUpperCase()
+//                         : '?',
+//                     style: TextStyle(
+//                       color: Colors.indigo.shade700,
+//                       fontWeight: FontWeight.bold,
+//                       fontFamily: 'Poppins',
+//                     ),
+//                   ),
+//                 ),
+//                 const SizedBox(width: 10),
+//                 Expanded(
+//                   child: Column(
+//                     crossAxisAlignment: CrossAxisAlignment.start,
+//                     children: [
+//                       Text(
+//                         review.userName,
+//                         style: const TextStyle(
+//                           fontWeight: FontWeight.w600,
+//                           fontSize: 14,
+//                           fontFamily: 'Poppins',
+//                         ),
+//                       ),
+//                       Text(
+//                         'ID: ${review.userId} | ReviewId: ${review.reviewId}',
+//                         style: TextStyle(
+//                           color: Colors.grey.shade500,
+//                           fontSize: 12,
+//                           fontFamily: 'Poppins',
+//                         ),
+//                       ),
+//                     ],
+//                   ),
+//                 ),
+//                 Container(
+//                   padding:
+//                       const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+//                   decoration: BoxDecoration(
+//                     color: Colors.indigo.shade50,
+//                     borderRadius: BorderRadius.circular(20),
+//                   ),
+//                   child: Text(
+//                     review.manualScore?.toStringAsFixed(1) ?? '-',
+//                     style: TextStyle(
+//                       fontWeight: FontWeight.bold,
+//                       fontSize: 16,
+//                       fontFamily: 'Poppins',
+//                       color: Colors.indigo.shade700,
+//                     ),
+//                   ),
+//                 ),
+//                 const SizedBox(width: 8),
+//                 IconButton(
+//                   icon: const Icon(Icons.edit_outlined, size: 18),
+//                   onPressed: onEdit,
+//                   visualDensity: VisualDensity.compact,
+//                 ),
+//               ],
+//             ),
+//             if (review.comments != null && review.comments!.isNotEmpty) ...[
+//               const SizedBox(height: 10),
+//               const Divider(height: 1),
+//               const SizedBox(height: 10),
+//               Row(
+//                 crossAxisAlignment: CrossAxisAlignment.start,
+//                 children: [
+//                   Icon(Icons.comment_outlined,
+//                       size: 14, color: Colors.grey.shade400),
+//                   const SizedBox(width: 6),
+//                   Expanded(
+//                     child: Text(
+//                       review.comments!,
+//                       style: TextStyle(
+//                         fontSize: 13,
+//                         color: Colors.grey.shade700,
+//                         fontFamily: 'Poppins',
+//                       ),
+//                     ),
+//                   ),
+//                 ],
+//               ),
+//             ],
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
+
+// class _EmptyView extends StatelessWidget {
+//   final VoidCallback onAdd;
+//   const _EmptyView({required this.onAdd});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Center(
+//       child: Column(
+//         mainAxisSize: MainAxisSize.min,
+//         children: [
+//           Icon(Icons.rate_review_outlined,
+//               size: 64, color: Colors.grey.shade300),
+//           const SizedBox(height: 12),
+//           Text(
+//             'No reviews found for this month.',
+//             style: TextStyle(
+//               color: Colors.grey.shade500,
+//               fontSize: 14,
+//               fontFamily: 'Poppins',
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+// }
+
+
+
+
+
+
+
 // lib/screens/performance/reviews_screen.dart
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../../controllers/performance_controller.dart';
+import '../../models/models.dart';
 import '../../models/performance_model.dart';
 import '../../core/theme/app_theme.dart';
+import '../../services/api_service.dart';
 import 'widgets/month_year_picker.dart';
 
 class ReviewsScreen extends StatefulWidget {
@@ -499,7 +934,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
   void _load() {
     _ctrl.fetchReviews(
       month: _ctrl.selectedMonth.value,
-      year: _ctrl.selectedYear.value,
+      year:  _ctrl.selectedYear.value,
     );
   }
 
@@ -522,7 +957,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
         children: [
           Obx(() => MonthYearPicker(
                 month: _ctrl.selectedMonth.value,
-                year: _ctrl.selectedYear.value,
+                year:  _ctrl.selectedYear.value,
                 onChanged: (m, y) {
                   _ctrl.setMonthYear(m, y);
                   _load();
@@ -533,13 +968,9 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
               if (_ctrl.isLoadingReviews.value) {
                 return const Center(child: CircularProgressIndicator());
               }
-
               if (_ctrl.reviews.isEmpty) {
-                return _EmptyView(
-                  onAdd: () => _showReviewDialog(context),
-                );
+                return _EmptyView(onAdd: () => _showReviewDialog(context));
               }
-
               return RefreshIndicator(
                 onRefresh: () async => _load(),
                 child: ListView.separated(
@@ -562,173 +993,249 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showReviewDialog(context),
         icon: const Icon(Icons.rate_review_outlined),
-        label:
-            const Text('Add Review', style: TextStyle(fontFamily: 'Poppins')),
+        label: const Text('Add Review', style: TextStyle(fontFamily: 'Poppins')),
       ),
     );
   }
 
   void _showReviewDialog(BuildContext context, {ReviewModel? existing}) {
-    final formKey = GlobalKey<FormState>();
-
-    final userIdCtrl =
-        TextEditingController(text: existing?.userId.toString() ?? '');
-
-    final scoreCtrl = TextEditingController(
-        text: existing?.manualScore?.toStringAsFixed(1) ?? '');
-
-    final commentsCtrl =
-        TextEditingController(text: existing?.comments ?? '');
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => Padding(
         padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
+            bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: _ReviewDialog(ctrl: _ctrl, existing: existing),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+//  REVIEW DIALOG — user dropdown
+// ─────────────────────────────────────────────
+class _ReviewDialog extends StatefulWidget {
+  final PerformanceController ctrl;
+  final ReviewModel? existing;
+  const _ReviewDialog({required this.ctrl, this.existing});
+
+  @override
+  State<_ReviewDialog> createState() => _ReviewDialogState();
+}
+
+class _ReviewDialogState extends State<_ReviewDialog> {
+  final _formKey    = GlobalKey<FormState>();
+  final _scoreCtrl  = TextEditingController();
+  final _commentCtrl = TextEditingController();
+
+  List<UserModel> _users        = [];
+  bool            _loadingUsers = true;
+  UserModel?      _selectedUser;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-fill for edit
+    if (widget.existing != null) {
+      _scoreCtrl.text   = widget.existing!.manualScore?.toStringAsFixed(1) ?? '';
+      _commentCtrl.text = widget.existing!.comments ?? '';
+    }
+    _loadUsers();
+  }
+
+  Future<void> _loadUsers() async {
+    setState(() => _loadingUsers = true);
+    try {
+      final list = await ApiService.getAllUsers();
+      setState(() {
+        _users        = list;
+        _loadingUsers = false;
+        // Pre-select user on edit
+        if (widget.existing != null) {
+          _selectedUser = list.firstWhereOrNull(
+              (u) => u.userId == widget.existing!.userId);
+        }
+      });
+    } catch (_) {
+      setState(() => _loadingUsers = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _scoreCtrl.dispose();
+    _commentCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+
+            // ── Drag handle ──────────────────────────────────────────
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  existing != null ? 'Edit Review' : 'Submit Review',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Poppins',
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Obx(
-                  () => Text(
-                    'Month: ${_ctrl.selectedMonth.value} / ${_ctrl.selectedYear.value}',
-                    style: TextStyle(
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            Text(
+              widget.existing != null ? 'Edit Review' : 'Submit Review',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Poppins',
+              ),
+            ),
+            const SizedBox(height: 4),
+            Obx(() => Text(
+                  'Month: ${widget.ctrl.selectedMonth.value} / ${widget.ctrl.selectedYear.value}',
+                  style: TextStyle(
                       color: Colors.grey.shade500,
                       fontSize: 13,
-                      fontFamily: 'Poppins',
+                      fontFamily: 'Poppins'),
+                )),
+            const SizedBox(height: 20),
+
+            // ── Employee dropdown ─────────────────────────────────────
+            _loadingUsers
+                ? Container(
+                    height: 52,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                TextFormField(
-                  controller: userIdCtrl,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  decoration: _inputDecoration(
-                    label: 'Employee ID',
-                    hint: 'Enter user ID',
-                    icon: Icons.person_outline,
-                  ),
-                  validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
-                ),
-                const SizedBox(height: 14),
-
-                TextFormField(
-                  controller: scoreCtrl,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  decoration: _inputDecoration(
-                    label: 'Manual Score (0–100)',
-                    hint: 'e.g. 85.5',
-                    icon: Icons.score_outlined,
-                  ),
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return 'Required';
-                    final val = double.tryParse(v);
-                    if (val == null) return 'Enter a valid number';
-                    if (val < 0 || val > 100) return 'Score must be 0–100';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 14),
-
-                TextFormField(
-                  controller: commentsCtrl,
-                  maxLines: 3,
-                  decoration: _inputDecoration(
-                    label: 'Comments',
-                    hint: 'Optional feedback...',
-                    icon: Icons.comment_outlined,
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                Obx(
-                  () => SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: _ctrl.isSubmittingReview.value
-                          ? null
-                          : () async {
-                              if (!formKey.currentState!.validate()) return;
-
-                              final request = ReviewRequestModel(
-                                // ✅ IMPORTANT: reviewId send for edit
-                                reviewId: existing?.reviewId,
-                                userId: int.parse(userIdCtrl.text),
-                                month: _ctrl.selectedMonth.value,
-                                year: _ctrl.selectedYear.value,
-                                manualScore: double.parse(scoreCtrl.text),
-                                comments: commentsCtrl.text.trim(),
-                              );
-
-                              final success = await _ctrl.submitReview(request);
-                              if (success && context.mounted) {
-                                Navigator.pop(context);
-                              }
-                            },
-                      style: ElevatedButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+                    child: const Center(
+                      child: SizedBox(
+                        width: 20, height: 20,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: AppTheme.primary),
                       ),
-                      child: _ctrl.isSubmittingReview.value
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : Text(
-                              existing != null
-                                  ? 'Update Review'
-                                  : 'Submit Review',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Poppins',
-                              ),
-                            ),
                     ),
+                  )
+                : DropdownButtonFormField<UserModel>(
+                    value: _selectedUser,
+                    isExpanded: true,
+                    decoration: _inputDecoration(
+                      label: 'Employee',
+                      hint: 'Select employee',
+                      icon: Icons.person_outline,
+                    ),
+                    hint: const Text('Select employee',
+                        style: TextStyle(
+                            fontFamily: 'Poppins',
+                            color: AppTheme.textSecondary)),
+                    items: _users.map((u) {
+                      return DropdownMenuItem<UserModel>(
+                        value: u,
+                        child: Text(
+                          u.userName,
+                          style: const TextStyle(
+                              fontFamily: 'Poppins', fontSize: 14),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (val) => setState(() => _selectedUser = val),
+                    validator: (_) =>
+                        _selectedUser == null ? 'Please select an employee' : null,
                   ),
-                ),
-              ],
+            const SizedBox(height: 14),
+
+            // ── Score ────────────────────────────────────────────────
+            TextFormField(
+              controller: _scoreCtrl,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: _inputDecoration(
+                label: 'Manual Score (0–100)',
+                hint: 'e.g. 85.5',
+                icon: Icons.score_outlined,
+              ),
+              validator: (v) {
+                if (v == null || v.isEmpty) return 'Required';
+                final val = double.tryParse(v);
+                if (val == null) return 'Enter a valid number';
+                if (val < 0 || val > 100) return 'Score must be 0–100';
+                return null;
+              },
             ),
-          ),
+            const SizedBox(height: 14),
+
+            // ── Comments ─────────────────────────────────────────────
+            TextFormField(
+              controller: _commentCtrl,
+              maxLines: 3,
+              decoration: _inputDecoration(
+                label: 'Comments',
+                hint: 'Optional feedback...',
+                icon: Icons.comment_outlined,
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // ── Submit button ─────────────────────────────────────────
+            Obx(() => SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: widget.ctrl.isSubmittingReview.value
+                        ? null
+                        : () async {
+                            if (!_formKey.currentState!.validate()) return;
+
+                            final request = ReviewRequestModel(
+                              reviewId:    widget.existing?.reviewId,
+                              userId:      _selectedUser!.userId,
+                              month:       widget.ctrl.selectedMonth.value,
+                              year:        widget.ctrl.selectedYear.value,
+                              manualScore: double.parse(_scoreCtrl.text),
+                              comments:    _commentCtrl.text.trim(),
+                            );
+
+                            final success =
+                                await widget.ctrl.submitReview(request);
+                            if (success && context.mounted) {
+                              Navigator.pop(context);
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primary,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: widget.ctrl.isSubmittingReview.value
+                        ? const SizedBox(
+                            width: 20, height: 20,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white))
+                        : Text(
+                            widget.existing != null
+                                ? 'Update Review'
+                                : 'Submit Review',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Poppins'),
+                          ),
+                  ),
+                )),
+          ],
         ),
       ),
     );
@@ -750,6 +1257,9 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
   }
 }
 
+// ─────────────────────────────────────────────
+//  REVIEW CARD
+// ─────────────────────────────────────────────
 class _ReviewCard extends StatelessWidget {
   final ReviewModel review;
   final VoidCallback onEdit;
@@ -775,93 +1285,82 @@ class _ReviewCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 18,
-                  backgroundColor: Colors.indigo.shade50,
-                  child: Text(
-                    review.userName.isNotEmpty
-                        ? review.userName[0].toUpperCase()
-                        : '?',
-                    style: TextStyle(
-                      color: Colors.indigo.shade700,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Poppins',
-                    ),
+            Row(children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: Colors.indigo.shade50,
+                child: Text(
+                  review.userName.isNotEmpty
+                      ? review.userName[0].toUpperCase()
+                      : '?',
+                  style: TextStyle(
+                    color: Colors.indigo.shade700,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Poppins',
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        review.userName,
-                        style: const TextStyle(
+                  Text(review.userName,
+                      style: const TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
-                          fontFamily: 'Poppins',
-                        ),
-                      ),
-                      Text(
-                        'ID: ${review.userId} | ReviewId: ${review.reviewId}',
-                        style: TextStyle(
-                          color: Colors.grey.shade500,
-                          fontSize: 12,
-                          fontFamily: 'Poppins',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.indigo.shade50,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    review.manualScore?.toStringAsFixed(1) ?? '-',
+                          fontFamily: 'Poppins')),
+                  Text(
+                    'ID: ${review.userId} | ReviewId: ${review.reviewId}',
                     style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      fontFamily: 'Poppins',
-                      color: Colors.indigo.shade700,
-                    ),
+                        color: Colors.grey.shade500,
+                        fontSize: 12,
+                        fontFamily: 'Poppins'),
+                  ),
+                ]),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.indigo.shade50,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  review.manualScore?.toStringAsFixed(1) ?? '-',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    fontFamily: 'Poppins',
+                    color: Colors.indigo.shade700,
                   ),
                 ),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined, size: 18),
-                  onPressed: onEdit,
-                  visualDensity: VisualDensity.compact,
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                onPressed: onEdit,
+                visualDensity: VisualDensity.compact,
+              ),
+            ]),
             if (review.comments != null && review.comments!.isNotEmpty) ...[
               const SizedBox(height: 10),
               const Divider(height: 1),
               const SizedBox(height: 10),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.comment_outlined,
-                      size: 14, color: Colors.grey.shade400),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      review.comments!,
-                      style: TextStyle(
+              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Icon(Icons.comment_outlined,
+                    size: 14, color: Colors.grey.shade400),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    review.comments!,
+                    style: TextStyle(
                         fontSize: 13,
                         color: Colors.grey.shade700,
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
+                        fontFamily: 'Poppins'),
                   ),
-                ],
-              ),
+                ),
+              ]),
             ],
           ],
         ),
@@ -870,6 +1369,9 @@ class _ReviewCard extends StatelessWidget {
   }
 }
 
+// ─────────────────────────────────────────────
+//  EMPTY VIEW
+// ─────────────────────────────────────────────
 class _EmptyView extends StatelessWidget {
   final VoidCallback onAdd;
   const _EmptyView({required this.onAdd});
@@ -877,22 +1379,17 @@ class _EmptyView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.rate_review_outlined,
-              size: 64, color: Colors.grey.shade300),
-          const SizedBox(height: 12),
-          Text(
-            'No reviews found for this month.',
-            style: TextStyle(
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Icon(Icons.rate_review_outlined, size: 64, color: Colors.grey.shade300),
+        const SizedBox(height: 12),
+        Text(
+          'No reviews found for this month.',
+          style: TextStyle(
               color: Colors.grey.shade500,
               fontSize: 14,
-              fontFamily: 'Poppins',
-            ),
-          ),
-        ],
-      ),
+              fontFamily: 'Poppins'),
+        ),
+      ]),
     );
   }
 }
