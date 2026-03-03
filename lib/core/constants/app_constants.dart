@@ -199,10 +199,13 @@ class AppConstants {
   static const String assetAddEndpoint         = '/Asset/add';
   static const String assetAssignEndpoint      = '/Asset/assign';
   static const String assetReturnEndpoint      = '/Asset/return';
-  static const String assetMaintenanceEndpoint = '/Asset/maintenance'; // ✅ NEW
   static const String assetListEndpoint        = '/Asset/list';
   static const String assetHistoryEndpoint     = '/Asset/history';
   static const String assetSummaryEndpoint     = '/Asset/summary';
+  static const String assetMaintenanceStartEndpoint    = '/Asset/maintenance/start';
+  static const String assetMaintenanceCompleteEndpoint = '/Asset/maintenance/complete';
+  static const String assetMaintenanceListEndpoint     = '/Asset/maintenance/list';
+  static const String assetMaintenanceHistoryEndpoint  = '/Asset/maintenance/history';
 
   // =================== STORAGE KEYS ===================
   static const String tokenKey     = 'jwt_token';

@@ -4542,15 +4542,6 @@ class _AdminContent extends StatelessWidget {
           isFirst: false,
           isLast: false,
         ),
-        _GroupRow(
-          icon: Icons.history_rounded,
-          label: 'Login Log',
-          sub: 'View all user login sessions',
-          color: const Color(0xFF6366F1),
-          onTap: () => Get.toNamed('/login-history'),
-          isFirst: false,
-          isLast: false,
-        ),
         // ✅ Asset Management — Admin Panel
         _GroupRow(
           icon: Icons.inventory_2_rounded,
@@ -4558,6 +4549,15 @@ class _AdminContent extends StatelessWidget {
           sub: 'Add, assign & manage company assets',
           color: const Color(0xFF7C3AED),
           onTap: () => Get.toNamed('/asset-admin'),
+          isFirst: false,
+          isLast: false,
+        ),
+        _GroupRow(
+          icon: Icons.history_rounded,
+          label: 'Login Log',
+          sub: 'View all user login sessions',
+          color: const Color(0xFF6366F1),
+          onTap: () => Get.toNamed('/login-history'),
           isFirst: false,
           isLast: false,
         ),
