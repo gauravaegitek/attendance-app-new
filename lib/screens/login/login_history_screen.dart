@@ -2691,6 +2691,2436 @@
 
 
 
+// // lib/screens/login/login_history_screen.dart
+
+// import 'package:flutter/material.dart';
+// import 'package:flutter/services.dart';
+// import 'package:get/get.dart';
+// import 'package:intl/intl.dart';
+
+// import '../../controllers/auth_controller.dart';
+// import '../../controllers/login_history_controller.dart';
+// import '../../core/theme/app_theme.dart';
+// import '../../core/utils/app_utils.dart';
+// import '../../models/login_history_model.dart';
+// import '../../models/models.dart';
+// import '../../services/api_service.dart';
+
+// class LoginHistoryScreen extends StatefulWidget {
+//   const LoginHistoryScreen({super.key});
+
+//   @override
+//   State<LoginHistoryScreen> createState() => _LoginHistoryScreenState();
+// }
+
+// class _LoginHistoryScreenState extends State<LoginHistoryScreen>
+//     with SingleTickerProviderStateMixin {
+//   late final LoginHistoryController _ctrl;
+//   late final TabController _tabs;
+//   final AuthController _auth = Get.find();
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     if (!Get.isRegistered<LoginHistoryController>()) {
+//       Get.put(LoginHistoryController());
+//     }
+//     _ctrl = Get.find<LoginHistoryController>();
+//     _tabs = TabController(length: _auth.isAdmin ? 2 : 1, vsync: this);
+//   }
+
+//   @override
+//   void dispose() {
+//     _tabs.dispose();
+//     super.dispose();
+//   }
+
+//   AppBar _buildAppBar({required bool showTabBar}) {
+//     return AppBar(
+//       backgroundColor: AppTheme.primary,
+//       foregroundColor: Colors.white,
+//       elevation: 0,
+//       title: const Text(
+//         'Login History',
+//         style: TextStyle(
+//             fontFamily: 'Poppins',
+//             fontWeight: FontWeight.w700,
+//             fontSize: 18,
+//             color: Colors.white),
+//       ),
+//       systemOverlayStyle: SystemUiOverlayStyle.light,
+//       bottom: showTabBar
+//           ? TabBar(
+//               controller: _tabs,
+//               indicatorColor: Colors.white,
+//               indicatorWeight: 3,
+//               labelStyle: const TextStyle(
+//                   fontFamily: 'Poppins',
+//                   fontWeight: FontWeight.w600,
+//                   fontSize: 13),
+//               unselectedLabelStyle: const TextStyle(
+//                   fontFamily: 'Poppins',
+//                   fontWeight: FontWeight.w400,
+//                   fontSize: 13),
+//               labelColor: Colors.white,
+//               unselectedLabelColor: Colors.white60,
+//               tabs: const [
+//                 Tab(text: 'My History'),
+//                 Tab(text: 'User Lookup'),
+//               ],
+//             )
+//           : null,
+//     );
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     if (!_auth.isAdmin) {
+//       return Scaffold(
+//         backgroundColor: AppTheme.background,
+//         appBar: _buildAppBar(showTabBar: false),
+//         body: _MyHistoryTab(ctrl: _ctrl),
+//       );
+//     }
+//     return Scaffold(
+//       backgroundColor: AppTheme.background,
+//       appBar: _buildAppBar(showTabBar: true),
+//       body: TabBarView(
+//         controller: _tabs,
+//         children: [
+//           _MyHistoryTab(ctrl: _ctrl),
+//           _UserLookupTab(ctrl: _ctrl),
+//         ],
+//       ),
+//     );
+//   }
+// }
+
+// // ─────────────────────────────────────────────
+// //  MY HISTORY TAB  — only today's sessions, no filter
+// // ─────────────────────────────────────────────
+// class _MyHistoryTab extends StatelessWidget {
+//   final LoginHistoryController ctrl;
+//   const _MyHistoryTab({required this.ctrl});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Obx(() {
+//       return RefreshIndicator(
+//         color: AppTheme.primary,
+//         onRefresh: () async => ctrl.fetchTodayHistory(),
+//         child: CustomScrollView(
+//           physics: const AlwaysScrollableScrollPhysics(
+//               parent: BouncingScrollPhysics()),
+//           slivers: [
+//             // ── Today's Sessions ──────────────────────────────
+//             SliverToBoxAdapter(
+//               child: _SectionHeader(
+//                 icon: Icons.today_rounded,
+//                 title: "Today's Sessions",
+//                 color: AppTheme.success,
+//                 trailing: ctrl.isLoadingToday.value
+//                     ? const _InlineLoader()
+//                     : Text(
+//                         '${ctrl.todayHistory.length} session${ctrl.todayHistory.length == 1 ? '' : 's'}',
+//                         style: AppTheme.caption),
+//               ),
+//             ),
+//             if (ctrl.isLoadingToday.value)
+//               const SliverToBoxAdapter(
+//                   child: Padding(
+//                       padding: EdgeInsets.symmetric(vertical: 40),
+//                       child: _Loader()))
+//             else if (ctrl.errorToday.value.isNotEmpty)
+//               SliverToBoxAdapter(
+//                 child: _InlineError(
+//                     message: ctrl.errorToday.value,
+//                     onRetry: ctrl.fetchTodayHistory),
+//               )
+//             else if (ctrl.todayHistory.isEmpty)
+//               const SliverToBoxAdapter(
+//                 child: _InlineEmpty(
+//                     icon: Icons.login_rounded,
+//                     message: 'No login activity today'),
+//               )
+//             else
+//               SliverPadding(
+//                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+//                 sliver: SliverList(
+//                   delegate: SliverChildBuilderDelegate(
+//                     (_, i) => Padding(
+//                       padding: const EdgeInsets.only(bottom: 10),
+//                       child: _HistoryCard(
+//                           record: ctrl.todayHistory[i], ctrl: ctrl),
+//                     ),
+//                     childCount: ctrl.todayHistory.length,
+//                   ),
+//                 ),
+//               ),
+//           ],
+//         ),
+//       );
+//     });
+//   }
+// }
+
+// // ─────────────────────────────────────────────
+// //  USER LOOKUP TAB
+// // ─────────────────────────────────────────────
+// class _UserLookupTab extends StatefulWidget {
+//   final LoginHistoryController ctrl;
+//   const _UserLookupTab({required this.ctrl});
+
+//   @override
+//   State<_UserLookupTab> createState() => _UserLookupTabState();
+// }
+
+// class _UserLookupTabState extends State<_UserLookupTab>
+//     with AutomaticKeepAliveClientMixin {
+//   @override
+//   bool get wantKeepAlive => true;
+
+//   List<UserModel> _users        = [];
+//   bool            _loadingUsers = true;
+//   UserModel?      _selectedUser;
+
+//   final Rx<DateTime> _fromDate = DateTime.now().obs;
+//   final Rx<DateTime> _toDate   = DateTime.now().obs;
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     _loadUsers();
+//   }
+
+//   Future<void> _loadUsers() async {
+//     setState(() => _loadingUsers = true);
+//     try {
+//       final list = await ApiService.getAllUsers();
+//       setState(() {
+//         _users        = list;
+//         _loadingUsers = false;
+//       });
+//     } catch (_) {
+//       setState(() => _loadingUsers = false);
+//     }
+//   }
+
+//   Future<void> _pickFromDate() async {
+//     final picked = await showDatePicker(
+//       context: context,
+//       initialDate: _fromDate.value,
+//       firstDate: DateTime(2020),
+//       lastDate: DateTime.now(),
+//       builder: (context, child) => Theme(
+//         data: Theme.of(context).copyWith(
+//           colorScheme:
+//               const ColorScheme.light(primary: AppTheme.primary),
+//         ),
+//         child: child!,
+//       ),
+//     );
+//     if (picked != null) _fromDate.value = picked;
+//   }
+
+//   Future<void> _pickToDate() async {
+//     final picked = await showDatePicker(
+//       context: context,
+//       initialDate: _toDate.value,
+//       firstDate: DateTime(2020),
+//       lastDate: DateTime.now(),
+//       builder: (context, child) => Theme(
+//         data: Theme.of(context).copyWith(
+//           colorScheme:
+//               const ColorScheme.light(primary: AppTheme.primary),
+//         ),
+//         child: child!,
+//       ),
+//     );
+//     if (picked != null) _toDate.value = picked;
+//   }
+
+//   void _search() {
+//     if (_selectedUser == null) {
+//       Get.snackbar(
+//         'Select a User',
+//         'Please select a user from the dropdown before searching.',
+//         snackPosition: SnackPosition.TOP,
+//         backgroundColor: AppTheme.cardBackground,
+//         colorText: AppTheme.textPrimary,
+//         icon: Container(
+//           padding: const EdgeInsets.all(8),
+//           decoration: BoxDecoration(
+//             color: AppTheme.primaryLight,
+//             borderRadius: BorderRadius.circular(10),
+//           ),
+//           child: const Icon(Icons.person_search_rounded,
+//               color: AppTheme.primary, size: 20),
+//         ),
+//         margin: const EdgeInsets.all(12),
+//         borderRadius: 16,
+//         duration: const Duration(seconds: 3),
+//         boxShadows: [
+//           BoxShadow(
+//             color: Colors.black.withOpacity(0.10),
+//             blurRadius: 16,
+//             offset: const Offset(0, 4),
+//           ),
+//         ],
+//         titleText: const Text(
+//           'Select a User',
+//           style: TextStyle(
+//               fontFamily: 'Poppins',
+//               fontWeight: FontWeight.w700,
+//               fontSize: 14,
+//               color: AppTheme.textPrimary),
+//         ),
+//         messageText: const Text(
+//           'Please select a user from the dropdown before searching.',
+//           style: TextStyle(
+//               fontFamily: 'Poppins',
+//               fontSize: 12,
+//               color: AppTheme.textSecondary),
+//         ),
+//       );
+//       return;
+//     }
+//     widget.ctrl.fetchUserHistory(
+//       _selectedUser!.userId,
+//       from: _fromDate.value,
+//       to:   _toDate.value,
+//     );
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     super.build(context);
+//     return Column(children: [
+//       // ── Filter Header ──────────────────────────────────────
+//       Container(
+//         color: AppTheme.primary,
+//         padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+//         child: Column(children: [
+//           // User Dropdown
+//           _loadingUsers
+//               ? Container(
+//                   height: 52,
+//                   decoration: BoxDecoration(
+//                     color: Colors.white.withOpacity(0.15),
+//                     borderRadius: BorderRadius.circular(12),
+//                     border: Border.all(
+//                         color: Colors.white.withOpacity(0.3)),
+//                   ),
+//                   child: const Center(
+//                     child: Row(
+//                       mainAxisAlignment: MainAxisAlignment.center,
+//                       children: [
+//                         SizedBox(
+//                           width: 16, height: 16,
+//                           child: CircularProgressIndicator(
+//                               strokeWidth: 2,
+//                               color: Colors.white),
+//                         ),
+//                         SizedBox(width: 10),
+//                         Text('Loading users...',
+//                             style: TextStyle(
+//                                 color: Colors.white70,
+//                                 fontFamily: 'Poppins',
+//                                 fontSize: 13)),
+//                       ],
+//                     ),
+//                   ),
+//                 )
+//               : Container(
+//                   padding: const EdgeInsets.symmetric(
+//                       horizontal: 12, vertical: 4),
+//                   decoration: BoxDecoration(
+//                     color: Colors.white.withOpacity(0.15),
+//                     borderRadius: BorderRadius.circular(12),
+//                     border: Border.all(
+//                         color: Colors.white.withOpacity(0.3)),
+//                   ),
+//                   child: DropdownButtonHideUnderline(
+//                     child: DropdownButton<UserModel>(
+//                       value: _selectedUser,
+//                       isExpanded: true,
+//                       dropdownColor: AppTheme.primaryDark,
+//                       iconEnabledColor: Colors.white,
+//                       hint: const Row(children: [
+//                         Icon(Icons.person_search_rounded,
+//                             color: Colors.white70, size: 18),
+//                         SizedBox(width: 8),
+//                         Text('Select User',
+//                             style: TextStyle(
+//                                 color: Colors.white70,
+//                                 fontFamily: 'Poppins',
+//                                 fontSize: 13)),
+//                       ]),
+//                       items: _users
+//                           .map((u) => DropdownMenuItem<UserModel>(
+//                                 value: u,
+//                                 child: Text(u.userName,
+//                                     style: const TextStyle(
+//                                         color: Colors.white,
+//                                         fontFamily: 'Poppins',
+//                                         fontSize: 14),
+//                                     overflow:
+//                                         TextOverflow.ellipsis),
+//                               ))
+//                           .toList(),
+//                       onChanged: (val) =>
+//                           setState(() => _selectedUser = val),
+//                       selectedItemBuilder: (_) => _users
+//                           .map((u) => Row(children: [
+//                                 const Icon(Icons.person_rounded,
+//                                     color: Colors.white70,
+//                                     size: 18),
+//                                 const SizedBox(width: 8),
+//                                 Text(u.userName,
+//                                     style: const TextStyle(
+//                                         color: Colors.white,
+//                                         fontFamily: 'Poppins',
+//                                         fontSize: 13,
+//                                         fontWeight:
+//                                             FontWeight.w600)),
+//                               ]))
+//                           .toList(),
+//                     ),
+//                   ),
+//                 ),
+
+//           const SizedBox(height: 10),
+
+//           // Date + Search
+//           Row(children: [
+//             Expanded(
+//               child: _DateField(
+//                   label: 'From',
+//                   obs: _fromDate,
+//                   onTap: _pickFromDate),
+//             ),
+//             const SizedBox(width: 12),
+//             Expanded(
+//               child: _DateField(
+//                   label: 'To',
+//                   obs: _toDate,
+//                   onTap: _pickToDate),
+//             ),
+//             const SizedBox(width: 12),
+//             Obx(() => ElevatedButton(
+//                   onPressed: widget.ctrl.isLoadingUser.value
+//                       ? null
+//                       : _search,
+//                   style: ElevatedButton.styleFrom(
+//                     backgroundColor: Colors.white,
+//                     foregroundColor: AppTheme.primary,
+//                     minimumSize: const Size(0, 44),
+//                     padding: const EdgeInsets.symmetric(
+//                         horizontal: 16),
+//                   ),
+//                   child: widget.ctrl.isLoadingUser.value
+//                       ? const SizedBox(
+//                           height: 16, width: 16,
+//                           child: CircularProgressIndicator(
+//                               strokeWidth: 2,
+//                               color: AppTheme.primary))
+//                       : const Icon(Icons.search),
+//                 )),
+//           ]),
+//         ]),
+//       ),
+
+//       // ── Summary Card ───────────────────────────────────────
+//       Obx(() {
+//         final records = widget.ctrl.userHistory;
+//         if (records.isEmpty) return const SizedBox();
+//         final activeCount = records
+//             .where((r) =>
+//                 r.sessionStatus == 'Active' || r.isActive)
+//             .length;
+//         final endedCount = records.length - activeCount;
+//         final totalMins  = records.fold<int>(
+//             0, (s, r) => s + _HistoryHelper.calcDurationMins(r));
+//         final h = totalMins ~/ 60;
+//         final m = totalMins % 60;
+//         return Container(
+//           margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+//           padding: const EdgeInsets.all(12),
+//           decoration: AppTheme.cardDecoration(),
+//           child: Row(
+//             mainAxisAlignment: MainAxisAlignment.spaceAround,
+//             children: [
+//               _StatItem(label: 'Total',  value: '${records.length}', color: AppTheme.primary),
+//               _StatItem(label: 'Active', value: '$activeCount',      color: AppTheme.success),
+//               _StatItem(label: 'Ended',  value: '$endedCount',       color: AppTheme.error),
+//               _StatItem(label: 'Hours',  value: '${h}h ${m}m',      color: AppTheme.accent),
+//             ],
+//           ),
+//         );
+//       }),
+
+//       // ── Results ────────────────────────────────────────────
+//       Expanded(
+//         child: Obx(() {
+//           if (widget.ctrl.isLoadingUser.value) return const _Loader();
+//           if (widget.ctrl.errorUser.value.isNotEmpty) {
+//             return _InlineError(
+//                 message: widget.ctrl.errorUser.value,
+//                 onRetry: () {});
+//           }
+//           if (widget.ctrl.userHistory.isEmpty) {
+//             return const _InlineEmpty(
+//               icon: Icons.manage_search_rounded,
+//               message: 'Select user, pick dates, then tap 🔍',
+//             );
+//           }
+//           return ListView.separated(
+//             padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+//             itemCount: widget.ctrl.userHistory.length,
+//             separatorBuilder: (_, __) => const SizedBox(height: 10),
+//             itemBuilder: (_, i) => _HistoryCard(
+//                 record: widget.ctrl.userHistory[i],
+//                 ctrl: widget.ctrl),
+//           );
+//         }),
+//       ),
+//     ]);
+//   }
+// }
+
+// // ─────────────────────────────────────────────
+// //  HELPER
+// // ─────────────────────────────────────────────
+// class _HistoryHelper {
+//   static DateTime? _parse(String? raw) {
+//     if (raw == null || raw.trim().isEmpty) return null;
+//     final s = raw.trim();
+//     try {
+//       if (!s.contains('-') && s.contains(':')) {
+//         final now   = DateTime.now();
+//         final parts = s.split(':');
+//         final h     = int.tryParse(parts[0]) ?? 0;
+//         final m     = int.tryParse(parts[1]) ?? 0;
+//         final sec   = parts.length > 2
+//             ? int.tryParse(parts[2].split('.')[0]) ?? 0
+//             : 0;
+//         return DateTime(now.year, now.month, now.day, h, m, sec);
+//       }
+//       return DateTime.parse(s.replaceFirst(' ', 'T'));
+//     } catch (_) {
+//       return null;
+//     }
+//   }
+
+//   static DateTime? parsePublic(String? raw) => _parse(raw);
+
+//   static int calcDurationMins(LoginHistoryModel record) {
+//     if (record.totalMinutes != null && record.totalMinutes! > 0) {
+//       return record.totalMinutes!;
+//     }
+//     final login = _parse(record.loginTime);
+//     if (login == null) return 0;
+//     final DateTime logout;
+//     final parsedLogout = _parse(record.logoutTime);
+//     if (parsedLogout != null) {
+//       logout = parsedLogout.isBefore(login)
+//           ? parsedLogout.add(const Duration(days: 1))
+//           : parsedLogout;
+//     } else if (record.sessionStatus == 'Active' || record.isActive) {
+//       logout = DateTime.now();
+//     } else {
+//       return 0;
+//     }
+//     return logout.difference(login).inMinutes.clamp(0, 99999);
+//   }
+
+//   static String fmtDuration(int mins) {
+//     if (mins <= 0) return '--';
+//     final h = mins ~/ 60;
+//     final m = mins % 60;
+//     return h == 0 ? '${m}m' : '${h}h ${m}m';
+//   }
+// }
+
+// // ─────────────────────────────────────────────
+// //  HISTORY CARD
+// // ─────────────────────────────────────────────
+// class _HistoryCard extends StatelessWidget {
+//   final LoginHistoryModel      record;
+//   final LoginHistoryController ctrl;
+//   const _HistoryCard({required this.record, required this.ctrl});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     final sessionStatus = record.sessionStatus;
+//     final isActive  = sessionStatus == 'Active'  || record.isActive;
+//     final isExpired = sessionStatus == 'Expired';
+
+//     final statusLabel = isActive  ? 'Active'
+//                       : isExpired ? 'Expired'
+//                       : 'Ended';
+//     final statusColor = isActive  ? AppTheme.success
+//                       : isExpired ? Colors.orange
+//                       : AppTheme.error;
+
+//     // Duration
+//     final String durationText;
+//     if (record.totalDuration != null &&
+//         record.totalDuration!.isNotEmpty) {
+//       durationText = record.totalDuration!;
+//     } else {
+//       final mins = _HistoryHelper.calcDurationMins(record);
+//       durationText = _HistoryHelper.fmtDuration(mins);
+//     }
+
+//     // Login
+//     final loginDate = ctrl.formatDateOnly(record.loginTime);
+//     final loginTime = ctrl.formatTimeOnly(record.loginTime);
+
+//     // Logout
+//     String logoutDate = '';
+//     String logoutTime = '';
+//     if (record.logoutTime != null && record.logoutTime!.isNotEmpty) {
+//       logoutDate = ctrl.formatDateOnly(record.logoutTime!);
+//       logoutTime = ctrl.formatTimeOnly(record.logoutTime!);
+//     } else if (!isActive) {
+//       final loginDt  = _HistoryHelper.parsePublic(record.loginTime);
+//       final totalMin = _HistoryHelper.calcDurationMins(record);
+//       if (loginDt != null && totalMin > 0) {
+//         final calcLogout = loginDt.add(Duration(minutes: totalMin));
+//         logoutDate = DateFormat('dd MMM yyyy').format(calcLogout);
+//         logoutTime = DateFormat('hh:mm a').format(calcLogout);
+//       }
+//     }
+
+//     return Container(
+//       decoration: AppTheme.cardDecoration(),
+//       padding: const EdgeInsets.all(16),
+//       child: Column(
+//         crossAxisAlignment: CrossAxisAlignment.start,
+//         children: [
+
+//           // ── Top Row ──────────────────────────────────────
+//           Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+//             Container(
+//               width: 44, height: 44,
+//               decoration: BoxDecoration(
+//                 gradient: AppTheme.primaryGradientDecoration.gradient,
+//                 borderRadius: BorderRadius.circular(14),
+//               ),
+//               child: Center(
+//                 child: Text(
+//                   record.userName.isNotEmpty
+//                       ? record.userName[0].toUpperCase()
+//                       : 'U',
+//                   style: const TextStyle(
+//                       color: Colors.white,
+//                       fontWeight: FontWeight.w800,
+//                       fontSize: 18,
+//                       fontFamily: 'Poppins'),
+//                 ),
+//               ),
+//             ),
+//             const SizedBox(width: 12),
+//             Expanded(
+//               child: Column(
+//                 crossAxisAlignment: CrossAxisAlignment.start,
+//                 children: [
+//                   Text(record.userName,
+//                       style: const TextStyle(
+//                           fontSize: 14,
+//                           fontWeight: FontWeight.w700,
+//                           fontFamily: 'Poppins',
+//                           color: AppTheme.textPrimary)),
+//                   if (record.role != null && record.role!.isNotEmpty)
+//                     Text(record.role!, style: AppTheme.bodySmall),
+//                 ],
+//               ),
+//             ),
+//             Container(
+//               padding: const EdgeInsets.symmetric(
+//                   horizontal: 9, vertical: 3),
+//               decoration: BoxDecoration(
+//                 color: statusColor.withOpacity(0.12),
+//                 borderRadius: BorderRadius.circular(20),
+//                 border: Border.all(
+//                     color: statusColor.withOpacity(0.3)),
+//               ),
+//               child: Row(mainAxisSize: MainAxisSize.min, children: [
+//                 Container(
+//                     width: 6, height: 6,
+//                     decoration: BoxDecoration(
+//                         color: statusColor,
+//                         shape: BoxShape.circle)),
+//                 const SizedBox(width: 5),
+//                 Text(statusLabel,
+//                     style: TextStyle(
+//                         fontSize: 11,
+//                         fontWeight: FontWeight.w700,
+//                         fontFamily: 'Poppins',
+//                         color: statusColor)),
+//               ]),
+//             ),
+//           ]),
+
+//           const SizedBox(height: 12),
+//           const Divider(height: 1, color: AppTheme.divider),
+//           const SizedBox(height: 12),
+
+//           // ── In / Out / Duration ───────────────────────────
+//           _InOutDurationRow(
+//             loginDate:  loginDate,
+//             loginTime:  loginTime,
+//             logoutDate: logoutDate,
+//             logoutTime: logoutTime,
+//             duration:   durationText,
+//             isActive:   isActive,
+//           ),
+
+//           // ── Logout Reason Badge ───────────────────────────
+//           if (record.logoutReason != null &&
+//               record.logoutReason!.isNotEmpty) ...[
+//             const SizedBox(height: 10),
+//             Container(
+//               padding: const EdgeInsets.symmetric(
+//                   horizontal: 8, vertical: 4),
+//               decoration: BoxDecoration(
+//                 color: ctrl
+//                     .reasonColor(record.logoutReason)
+//                     .withOpacity(0.1),
+//                 borderRadius: BorderRadius.circular(6),
+//                 border: Border.all(
+//                     color: ctrl
+//                         .reasonColor(record.logoutReason)
+//                         .withOpacity(0.3)),
+//               ),
+//               child: Row(mainAxisSize: MainAxisSize.min, children: [
+//                 Icon(ctrl.reasonIcon(record.logoutReason),
+//                     size: 12,
+//                     color: ctrl.reasonColor(record.logoutReason)),
+//                 const SizedBox(width: 5),
+//                 Text(
+//                   ctrl.reasonLabel(record.logoutReason),
+//                   style: TextStyle(
+//                       fontSize: 11,
+//                       fontFamily: 'Poppins',
+//                       fontWeight: FontWeight.w600,
+//                       color: ctrl.reasonColor(record.logoutReason)),
+//                 ),
+//               ]),
+//             ),
+//           ],
+
+//           // ── Platform / Device ─────────────────────────────
+//           if ((record.platform != null &&
+//                   record.platform!.isNotEmpty &&
+//                   record.platform != 'string') ||
+//               (record.deviceId != null &&
+//                   record.deviceId!.isNotEmpty)) ...[
+//             const SizedBox(height: 10),
+//             const Divider(height: 1, color: AppTheme.divider),
+//             const SizedBox(height: 10),
+//           ],
+//           if (record.platform != null &&
+//               record.platform!.isNotEmpty &&
+//               record.platform != 'string')
+//             _DetailRow(
+//                 icon: Icons.phone_android_rounded,
+//                 label: 'Platform',
+//                 value: record.platform!,
+//                 iconColor: AppTheme.chipWFH),
+//           if (record.deviceId != null &&
+//               record.deviceId!.isNotEmpty) ...[
+//             if (record.platform != null &&
+//                 record.platform!.isNotEmpty &&
+//                 record.platform != 'string')
+//               const SizedBox(height: 6),
+//             _DetailRow(
+//               icon: Icons.fingerprint_rounded,
+//               label: 'Device',
+//               value: record.deviceId!.length > 24
+//                   ? '${record.deviceId!.substring(0, 24)}…'
+//                   : record.deviceId!,
+//               iconColor: AppTheme.textSecondary,
+//             ),
+//           ],
+//         ],
+//       ),
+//     );
+//   }
+// }
+
+// // ─────────────────────────────────────────────
+// //  IN / OUT / DURATION ROW
+// //  Uses fixed SizedBox heights on every line so all 3 columns
+// //  are guaranteed to stay pixel-perfectly aligned.
+// // ─────────────────────────────────────────────
+// class _InOutDurationRow extends StatelessWidget {
+//   final String loginDate;
+//   final String loginTime;
+//   final String logoutDate;
+//   final String logoutTime;
+//   final String duration;
+//   final bool   isActive;
+
+//   const _InOutDurationRow({
+//     required this.loginDate,
+//     required this.loginTime,
+//     required this.logoutDate,
+//     required this.logoutTime,
+//     required this.duration,
+//     required this.isActive,
+//   });
+
+//   static const _labelStyle = TextStyle(
+//     fontSize: 10,
+//     color: AppTheme.textSecondary,
+//     fontFamily: 'Poppins',
+//     fontWeight: FontWeight.w500,
+//   );
+//   static const _dateStyle = TextStyle(
+//     fontSize: 10,
+//     fontWeight: FontWeight.w500,
+//     color: AppTheme.textSecondary,
+//     fontFamily: 'Poppins',
+//   );
+//   static const _timeStyle = TextStyle(
+//     fontSize: 12,
+//     fontWeight: FontWeight.w700,
+//     color: AppTheme.textPrimary,
+//     fontFamily: 'Poppins',
+//   );
+//   static const _timeHintStyle = TextStyle(
+//     fontSize: 12,
+//     fontWeight: FontWeight.w700,
+//     color: AppTheme.textHint,
+//     fontFamily: 'Poppins',
+//   );
+
+//   Widget _cell({
+//     required String label,
+//     required String date,
+//     required String time,
+//     required Color  dotColor,
+//     Color? timeColor,
+//   }) {
+//     final hasDate = date.isNotEmpty;
+//     final hasTime = time.isNotEmpty;
+//     return Column(
+//       crossAxisAlignment: CrossAxisAlignment.start,
+//       mainAxisSize: MainAxisSize.min,
+//       children: [
+//         // ── Row A: label ──
+//         SizedBox(height: 14, child: Text(label, style: _labelStyle)),
+//         const SizedBox(height: 3),
+//         // ── Row B: dot + date ──
+//         SizedBox(
+//           height: 14,
+//           child: Row(
+//             crossAxisAlignment: CrossAxisAlignment.center,
+//             children: [
+//               Container(
+//                 width: 7, height: 7,
+//                 decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
+//               ),
+//               const SizedBox(width: 5),
+//               Flexible(
+//                 child: Text(
+//                   hasDate ? date : '--',
+//                   style: _dateStyle,
+//                   overflow: TextOverflow.ellipsis,
+//                 ),
+//               ),
+//             ],
+//           ),
+//         ),
+//         const SizedBox(height: 2),
+//         // ── Row C: time ──
+//         SizedBox(
+//           height: 17,
+//           child: Padding(
+//             padding: const EdgeInsets.only(left: 12),
+//             child: Text(
+//               hasTime ? time : '--:--',
+//               style: (hasDate || hasTime)
+//                   ? (timeColor != null
+//                       ? _timeStyle.copyWith(color: timeColor)
+//                       : _timeStyle)
+//                   : _timeHintStyle,
+//               overflow: TextOverflow.ellipsis,
+//             ),
+//           ),
+//         ),
+//       ],
+//     );
+//   }
+
+//   Widget _durationCell() {
+//     return Column(
+//       crossAxisAlignment: CrossAxisAlignment.start,
+//       mainAxisSize: MainAxisSize.min,
+//       children: [
+//         // ── Row A: label ──
+//         const SizedBox(height: 14, child: Text('Duration', style: _labelStyle)),
+//         const SizedBox(height: 3),
+//         // ── Row B: dot + empty (same height as date row) ──
+//         SizedBox(
+//           height: 14,
+//           child: Row(
+//             crossAxisAlignment: CrossAxisAlignment.center,
+//             children: [
+//               Container(
+//                 width: 7, height: 7,
+//                 decoration: const BoxDecoration(
+//                     color: AppTheme.primary, shape: BoxShape.circle),
+//               ),
+//             ],
+//           ),
+//         ),
+//         const SizedBox(height: 2),
+//         // ── Row C: duration value ──
+//         SizedBox(
+//           height: 17,
+//           child: Padding(
+//             padding: const EdgeInsets.only(left: 12),
+//             child: Text(
+//               duration,
+//               style: _timeStyle.copyWith(
+//                   color: isActive ? AppTheme.primary : AppTheme.textPrimary),
+//               overflow: TextOverflow.ellipsis,
+//             ),
+//           ),
+//         ),
+//       ],
+//     );
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Row(
+//       crossAxisAlignment: CrossAxisAlignment.start,
+//       children: [
+//         Expanded(
+//           child: _cell(
+//             label:    'In',
+//             date:     loginDate,
+//             time:     loginTime,
+//             dotColor: AppTheme.success,
+//           ),
+//         ),
+//         Container(
+//           width: 1, height: 50,
+//           margin: const EdgeInsets.symmetric(horizontal: 8),
+//           color: AppTheme.divider,
+//         ),
+//         Expanded(
+//           child: _cell(
+//             label:    'Out',
+//             date:     logoutDate,
+//             time:     logoutTime,
+//             dotColor: isActive ? AppTheme.textHint : AppTheme.error,
+//           ),
+//         ),
+//         Container(
+//           width: 1, height: 50,
+//           margin: const EdgeInsets.symmetric(horizontal: 8),
+//           color: AppTheme.divider,
+//         ),
+//         Expanded(child: _durationCell()),
+//       ],
+//     );
+//   }
+// }
+
+// // ─────────────────────────────────────────────
+// //  STAT ITEM
+// // ─────────────────────────────────────────────
+// class _StatItem extends StatelessWidget {
+//   final String label, value;
+//   final Color  color;
+//   const _StatItem(
+//       {required this.label,
+//       required this.value,
+//       required this.color});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Column(children: [
+//       Text(value,
+//           style: TextStyle(
+//               fontSize: 20,
+//               fontWeight: FontWeight.w700,
+//               color: color,
+//               fontFamily: 'Poppins')),
+//       Text(label, style: AppTheme.caption),
+//     ]);
+//   }
+// }
+
+// // ─────────────────────────────────────────────
+// //  DATE FIELD
+// // ─────────────────────────────────────────────
+// class _DateField extends StatelessWidget {
+//   final String       label;
+//   final Rx<DateTime> obs;
+//   final VoidCallback onTap;
+//   const _DateField(
+//       {required this.label,
+//       required this.obs,
+//       required this.onTap});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Container(
+//       padding: const EdgeInsets.symmetric(
+//           horizontal: 12, vertical: 10),
+//       decoration: BoxDecoration(
+//         color: Colors.white.withOpacity(0.15),
+//         borderRadius: BorderRadius.circular(10),
+//         border: Border.all(color: Colors.white.withOpacity(0.3)),
+//       ),
+//       child: Row(children: [
+//         Expanded(
+//           child: Column(
+//             crossAxisAlignment: CrossAxisAlignment.start,
+//             children: [
+//               Text(label,
+//                   style: TextStyle(
+//                       color: Colors.white.withOpacity(0.8),
+//                       fontSize: 10,
+//                       fontFamily: 'Poppins')),
+//               const SizedBox(height: 2),
+//               Obx(() => Text(AppUtils.formatDate(obs.value),
+//                   style: const TextStyle(
+//                       color: Colors.white,
+//                       fontSize: 12,
+//                       fontWeight: FontWeight.w600,
+//                       fontFamily: 'Poppins'))),
+//             ],
+//           ),
+//         ),
+//         GestureDetector(
+//           onTap: onTap,
+//           child: Icon(Icons.calendar_month_outlined,
+//               size: 18,
+//               color: Colors.white.withOpacity(0.85)),
+//         ),
+//       ]),
+//     );
+//   }
+// }
+
+// // ─────────────────────────────────────────────
+// //  SECTION HEADER
+// // ─────────────────────────────────────────────
+// class _SectionHeader extends StatelessWidget {
+//   final IconData icon;
+//   final String   title;
+//   final Color    color;
+//   final Widget   trailing;
+//   const _SectionHeader({
+//     required this.icon,
+//     required this.title,
+//     required this.color,
+//     required this.trailing,
+//   });
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Padding(
+//       padding: const EdgeInsets.fromLTRB(16, 18, 16, 10),
+//       child: Row(children: [
+//         Container(
+//           padding: const EdgeInsets.all(7),
+//           decoration: BoxDecoration(
+//               color: color.withOpacity(0.1),
+//               borderRadius: BorderRadius.circular(10)),
+//           child: Icon(icon, color: color, size: 16),
+//         ),
+//         const SizedBox(width: 10),
+//         Text(title,
+//             style: const TextStyle(
+//                 fontSize: 14,
+//                 fontWeight: FontWeight.w700,
+//                 fontFamily: 'Poppins',
+//                 color: AppTheme.textPrimary)),
+//         const Spacer(),
+//         trailing,
+//       ]),
+//     );
+//   }
+// }
+
+// // ─────────────────────────────────────────────
+// //  DETAIL ROW
+// // ─────────────────────────────────────────────
+// class _DetailRow extends StatelessWidget {
+//   final IconData icon;
+//   final Color    iconColor;
+//   final String   label, value;
+//   const _DetailRow({
+//     required this.icon,
+//     required this.iconColor,
+//     required this.label,
+//     required this.value,
+//   });
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Row(children: [
+//       Icon(icon, color: iconColor, size: 15),
+//       const SizedBox(width: 7),
+//       Text('$label: ',
+//           style: const TextStyle(
+//               fontSize: 12,
+//               fontFamily: 'Poppins',
+//               color: AppTheme.textSecondary,
+//               fontWeight: FontWeight.w500)),
+//       Expanded(
+//         child: Text(value,
+//             style: const TextStyle(
+//                 fontSize: 12,
+//                 fontFamily: 'Poppins',
+//                 color: AppTheme.textPrimary,
+//                 fontWeight: FontWeight.w600),
+//             overflow: TextOverflow.ellipsis),
+//       ),
+//     ]);
+//   }
+// }
+
+// // ─────────────────────────────────────────────
+// //  UTILITY WIDGETS
+// // ─────────────────────────────────────────────
+// class _Loader extends StatelessWidget {
+//   const _Loader();
+//   @override
+//   Widget build(BuildContext context) => const Center(
+//       child: CircularProgressIndicator(color: AppTheme.primary));
+// }
+
+// class _InlineLoader extends StatelessWidget {
+//   const _InlineLoader();
+//   @override
+//   Widget build(BuildContext context) => const SizedBox(
+//       width: 14, height: 14,
+//       child: CircularProgressIndicator(
+//           strokeWidth: 2, color: AppTheme.primary));
+// }
+
+// class _InlineEmpty extends StatelessWidget {
+//   final IconData icon;
+//   final String   message;
+//   const _InlineEmpty({required this.icon, required this.message});
+//   @override
+//   Widget build(BuildContext context) => Padding(
+//         padding: const EdgeInsets.symmetric(vertical: 40),
+//         child: Center(
+//           child: Column(
+//             mainAxisAlignment: MainAxisAlignment.center,
+//             children: [
+//               Icon(icon, size: 56, color: AppTheme.textHint),
+//               const SizedBox(height: 14),
+//               Text(message,
+//                   textAlign: TextAlign.center,
+//                   style: const TextStyle(
+//                       fontFamily: 'Poppins',
+//                       fontSize: 13,
+//                       color: AppTheme.textSecondary)),
+//             ],
+//           ),
+//         ),
+//       );
+// }
+
+// class _InlineError extends StatelessWidget {
+//   final String       message;
+//   final VoidCallback onRetry;
+//   const _InlineError({required this.message, required this.onRetry});
+//   @override
+//   Widget build(BuildContext context) => Padding(
+//         padding: const EdgeInsets.symmetric(
+//             horizontal: 16, vertical: 12),
+//         child: Container(
+//           padding: const EdgeInsets.all(14),
+//           decoration: BoxDecoration(
+//               color: AppTheme.errorLight,
+//               borderRadius: BorderRadius.circular(12)),
+//           child: Row(children: [
+//             const Icon(Icons.error_outline_rounded,
+//                 color: AppTheme.error, size: 18),
+//             const SizedBox(width: 10),
+//             Expanded(
+//               child: Text(message,
+//                   style: const TextStyle(
+//                       fontFamily: 'Poppins',
+//                       fontSize: 12,
+//                       color: AppTheme.error)),
+//             ),
+//             GestureDetector(
+//               onTap: onRetry,
+//               child: const Padding(
+//                 padding: EdgeInsets.only(left: 8),
+//                 child: Icon(Icons.refresh_rounded,
+//                     color: AppTheme.error, size: 18),
+//               ),
+//             ),
+//           ]),
+//         ),
+//       );
+// }
+
+
+
+
+
+
+
+
+
+
+
+// // lib/screens/login/login_history_screen.dart
+
+// import 'package:flutter/material.dart';
+// import 'package:flutter/services.dart';
+// import 'package:get/get.dart';
+// import 'package:intl/intl.dart';
+
+// import '../../controllers/auth_controller.dart';
+// import '../../controllers/login_history_controller.dart';
+// import '../../core/theme/app_theme.dart';
+// import '../../core/utils/app_utils.dart';
+// import '../../models/login_history_model.dart';
+// import '../../models/models.dart';
+// import '../../services/api_service.dart';
+
+// class LoginHistoryScreen extends StatefulWidget {
+//   const LoginHistoryScreen({super.key});
+
+//   @override
+//   State<LoginHistoryScreen> createState() => _LoginHistoryScreenState();
+// }
+
+// class _LoginHistoryScreenState extends State<LoginHistoryScreen>
+//     with SingleTickerProviderStateMixin {
+//   late final LoginHistoryController _ctrl;
+//   late final TabController _tabs;
+//   final AuthController _auth = Get.find();
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     if (!Get.isRegistered<LoginHistoryController>()) {
+//       Get.put(LoginHistoryController());
+//     }
+//     _ctrl = Get.find<LoginHistoryController>();
+//     _tabs = TabController(length: _auth.isAdmin ? 2 : 1, vsync: this);
+//   }
+
+//   @override
+//   void dispose() {
+//     _tabs.dispose();
+//     super.dispose();
+//   }
+
+//   AppBar _buildAppBar({required bool showTabBar}) {
+//     return AppBar(
+//       backgroundColor: AppTheme.primary,
+//       foregroundColor: Colors.white,
+//       elevation: 0,
+//       title: const Text(
+//         'Login History',
+//         style: TextStyle(
+//             fontFamily: 'Poppins',
+//             fontWeight: FontWeight.w700,
+//             fontSize: 18,
+//             color: Colors.white),
+//       ),
+//       systemOverlayStyle: SystemUiOverlayStyle.light,
+//       bottom: showTabBar
+//           ? TabBar(
+//               controller: _tabs,
+//               indicatorColor: Colors.white,
+//               indicatorWeight: 3,
+//               labelStyle: const TextStyle(
+//                   fontFamily: 'Poppins',
+//                   fontWeight: FontWeight.w600,
+//                   fontSize: 13),
+//               unselectedLabelStyle: const TextStyle(
+//                   fontFamily: 'Poppins',
+//                   fontWeight: FontWeight.w400,
+//                   fontSize: 13),
+//               labelColor: Colors.white,
+//               unselectedLabelColor: Colors.white60,
+//               tabs: const [
+//                 Tab(text: 'My History'),
+//                 Tab(text: 'User Lookup'),
+//               ],
+//             )
+//           : null,
+//     );
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     if (!_auth.isAdmin) {
+//       return Scaffold(
+//         backgroundColor: AppTheme.background,
+//         appBar: _buildAppBar(showTabBar: false),
+//         body: _MyHistoryTab(ctrl: _ctrl),
+//       );
+//     }
+//     return Scaffold(
+//       backgroundColor: AppTheme.background,
+//       appBar: _buildAppBar(showTabBar: true),
+//       body: TabBarView(
+//         controller: _tabs,
+//         children: [
+//           _MyHistoryTab(ctrl: _ctrl),
+//           _UserLookupTab(ctrl: _ctrl),
+//         ],
+//       ),
+//     );
+//   }
+// }
+
+// // ─────────────────────────────────────────────
+// //  MY HISTORY TAB  — only today's sessions
+// // ─────────────────────────────────────────────
+// class _MyHistoryTab extends StatelessWidget {
+//   final LoginHistoryController ctrl;
+//   const _MyHistoryTab({required this.ctrl});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Obx(() {
+//       return RefreshIndicator(
+//         color: AppTheme.primary,
+//         onRefresh: () async => ctrl.fetchTodayHistory(),
+//         child: CustomScrollView(
+//           physics: const AlwaysScrollableScrollPhysics(
+//               parent: BouncingScrollPhysics()),
+//           slivers: [
+//             // ── Today's Sessions ──────────────────────────────
+//             SliverToBoxAdapter(
+//               child: _SectionHeader(
+//                 icon: Icons.today_rounded,
+//                 // ✅ Title clearly shows "Today"
+//                 title: "Today's Sessions  (${DateFormat('dd MMM yyyy').format(DateTime.now())})",
+//                 color: AppTheme.success,
+//                 trailing: ctrl.isLoadingToday.value
+//                     ? const _InlineLoader()
+//                     : Text(
+//                         '${ctrl.todayHistory.length} session${ctrl.todayHistory.length == 1 ? '' : 's'}',
+//                         style: AppTheme.caption),
+//               ),
+//             ),
+//             if (ctrl.isLoadingToday.value)
+//               const SliverToBoxAdapter(
+//                   child: Padding(
+//                       padding: EdgeInsets.symmetric(vertical: 40),
+//                       child: _Loader()))
+//             else if (ctrl.errorToday.value.isNotEmpty)
+//               SliverToBoxAdapter(
+//                 child: _InlineError(
+//                     message: ctrl.errorToday.value,
+//                     onRetry: ctrl.fetchTodayHistory),
+//               )
+//             else if (ctrl.todayHistory.isEmpty)
+//               const SliverToBoxAdapter(
+//                 child: _InlineEmpty(
+//                     icon: Icons.login_rounded,
+//                     message: 'No login activity today'),
+//               )
+//             else
+//               SliverPadding(
+//                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+//                 sliver: SliverList(
+//                   delegate: SliverChildBuilderDelegate(
+//                     (_, i) => Padding(
+//                       padding: const EdgeInsets.only(bottom: 10),
+//                       child: _HistoryCard(
+//                           record: ctrl.todayHistory[i], ctrl: ctrl),
+//                     ),
+//                     childCount: ctrl.todayHistory.length,
+//                   ),
+//                 ),
+//               ),
+//           ],
+//         ),
+//       );
+//     });
+//   }
+// }
+
+// // ─────────────────────────────────────────────
+// //  SENTINEL for "All Users" selection
+// // ─────────────────────────────────────────────
+// /// userId = -1 is the sentinel value that means "All Users".
+// final _allUsersOption = UserModel(
+//   userId:   -1,
+//   userName: 'All Users',
+//   email:    '',
+//   role:     '',
+//   isActive: true,
+// );
+
+// // ─────────────────────────────────────────────
+// //  USER LOOKUP TAB
+// // ─────────────────────────────────────────────
+// class _UserLookupTab extends StatefulWidget {
+//   final LoginHistoryController ctrl;
+//   const _UserLookupTab({required this.ctrl});
+
+//   @override
+//   State<_UserLookupTab> createState() => _UserLookupTabState();
+// }
+
+// class _UserLookupTabState extends State<_UserLookupTab>
+//     with AutomaticKeepAliveClientMixin {
+//   @override
+//   bool get wantKeepAlive => true;
+
+//   List<UserModel> _users        = [];
+//   bool            _loadingUsers = true;
+//   UserModel?      _selectedUser;
+
+//   // ✅ From = 1st of current month, To = today
+//   final Rx<DateTime> _fromDate = DateTime(
+//           DateTime.now().year, DateTime.now().month, 1)
+//       .obs;
+//   final Rx<DateTime> _toDate = DateTime.now().obs;
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     _loadUsers();
+//   }
+
+//   Future<void> _loadUsers() async {
+//     setState(() => _loadingUsers = true);
+//     try {
+//       final list = await ApiService.getAllUsers();
+//       setState(() {
+//         // ✅ Prepend "All Users" option at top of list
+//         _users = [_allUsersOption, ...list];
+//         _loadingUsers = false;
+//       });
+//     } catch (_) {
+//       setState(() => _loadingUsers = false);
+//     }
+//   }
+
+//   Future<void> _pickFromDate() async {
+//     final picked = await showDatePicker(
+//       context: context,
+//       initialDate: _fromDate.value,
+//       firstDate: DateTime(2020),
+//       lastDate: DateTime.now(),
+//       builder: (context, child) => Theme(
+//         data: Theme.of(context).copyWith(
+//           colorScheme:
+//               const ColorScheme.light(primary: AppTheme.primary),
+//         ),
+//         child: child!,
+//       ),
+//     );
+//     if (picked != null) _fromDate.value = picked;
+//   }
+
+//   Future<void> _pickToDate() async {
+//     final picked = await showDatePicker(
+//       context: context,
+//       initialDate: _toDate.value,
+//       firstDate: DateTime(2020),
+//       lastDate: DateTime.now(),
+//       builder: (context, child) => Theme(
+//         data: Theme.of(context).copyWith(
+//           colorScheme:
+//               const ColorScheme.light(primary: AppTheme.primary),
+//         ),
+//         child: child!,
+//       ),
+//     );
+//     if (picked != null) _toDate.value = picked;
+//   }
+
+//   void _search() {
+//     if (_selectedUser == null) {
+//       Get.snackbar(
+//         'Select a User',
+//         'Please select a user from the dropdown before searching.',
+//         snackPosition: SnackPosition.TOP,
+//         backgroundColor: AppTheme.cardBackground,
+//         colorText: AppTheme.textPrimary,
+//         icon: Container(
+//           padding: const EdgeInsets.all(8),
+//           decoration: BoxDecoration(
+//             color: AppTheme.primaryLight,
+//             borderRadius: BorderRadius.circular(10),
+//           ),
+//           child: const Icon(Icons.person_search_rounded,
+//               color: AppTheme.primary, size: 20),
+//         ),
+//         margin: const EdgeInsets.all(12),
+//         borderRadius: 16,
+//         duration: const Duration(seconds: 3),
+//         boxShadows: [
+//           BoxShadow(
+//             color: Colors.black.withOpacity(0.10),
+//             blurRadius: 16,
+//             offset: const Offset(0, 4),
+//           ),
+//         ],
+//         titleText: const Text(
+//           'Select a User',
+//           style: TextStyle(
+//               fontFamily: 'Poppins',
+//               fontWeight: FontWeight.w700,
+//               fontSize: 14,
+//               color: AppTheme.textPrimary),
+//         ),
+//         messageText: const Text(
+//           'Please select a user from the dropdown before searching.',
+//           style: TextStyle(
+//               fontFamily: 'Poppins',
+//               fontSize: 12,
+//               color: AppTheme.textSecondary),
+//         ),
+//       );
+//       return;
+//     }
+
+//     // ✅ If "All Users" selected (sentinel userId == -1), fetch all
+//     if (_selectedUser!.userId == -1) {
+//       widget.ctrl.fetchAllUsersHistory(
+//         from: _fromDate.value,
+//         to:   _toDate.value,
+//       );
+//     } else {
+//       widget.ctrl.fetchUserHistory(
+//         _selectedUser!.userId,
+//         from: _fromDate.value,
+//         to:   _toDate.value,
+//       );
+//     }
+//   }
+
+//   /// Icon for dropdown items — "All Users" gets a group icon
+//   Widget _userIcon(UserModel u) {
+//     if (u.userId == -1) {
+//       return const Icon(Icons.group_rounded, color: Colors.white70, size: 18);
+//     }
+//     return const Icon(Icons.person_rounded, color: Colors.white70, size: 18);
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     super.build(context);
+//     return Column(children: [
+//       // ── Filter Header ──────────────────────────────────────
+//       Container(
+//         color: AppTheme.primary,
+//         padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+//         child: Column(children: [
+//           // User Dropdown
+//           _loadingUsers
+//               ? Container(
+//                   height: 52,
+//                   decoration: BoxDecoration(
+//                     color: Colors.white.withOpacity(0.15),
+//                     borderRadius: BorderRadius.circular(12),
+//                     border: Border.all(
+//                         color: Colors.white.withOpacity(0.3)),
+//                   ),
+//                   child: const Center(
+//                     child: Row(
+//                       mainAxisAlignment: MainAxisAlignment.center,
+//                       children: [
+//                         SizedBox(
+//                           width: 16, height: 16,
+//                           child: CircularProgressIndicator(
+//                               strokeWidth: 2,
+//                               color: Colors.white),
+//                         ),
+//                         SizedBox(width: 10),
+//                         Text('Loading users...',
+//                             style: TextStyle(
+//                                 color: Colors.white70,
+//                                 fontFamily: 'Poppins',
+//                                 fontSize: 13)),
+//                       ],
+//                     ),
+//                   ),
+//                 )
+//               : Container(
+//                   padding: const EdgeInsets.symmetric(
+//                       horizontal: 12, vertical: 4),
+//                   decoration: BoxDecoration(
+//                     color: Colors.white.withOpacity(0.15),
+//                     borderRadius: BorderRadius.circular(12),
+//                     border: Border.all(
+//                         color: Colors.white.withOpacity(0.3)),
+//                   ),
+//                   child: DropdownButtonHideUnderline(
+//                     child: DropdownButton<UserModel>(
+//                       value: _selectedUser,
+//                       isExpanded: true,
+//                       dropdownColor: AppTheme.primaryDark,
+//                       iconEnabledColor: Colors.white,
+//                       hint: const Row(children: [
+//                         Icon(Icons.person_search_rounded,
+//                             color: Colors.white70, size: 18),
+//                         SizedBox(width: 8),
+//                         Text('Select User',
+//                             style: TextStyle(
+//                                 color: Colors.white70,
+//                                 fontFamily: 'Poppins',
+//                                 fontSize: 13)),
+//                       ]),
+//                       items: _users
+//                           .map((u) => DropdownMenuItem<UserModel>(
+//                                 value: u,
+//                                 child: Row(children: [
+//                                   // ✅ "All Users" gets a distinct group icon
+//                                   if (u.userId == -1)
+//                                     const Icon(Icons.group_rounded,
+//                                         color: Colors.amber, size: 16)
+//                                   else
+//                                     const Icon(Icons.person_outline_rounded,
+//                                         color: Colors.white70, size: 16),
+//                                   const SizedBox(width: 8),
+//                                   Expanded(
+//                                     child: Text(
+//                                       u.userName,
+//                                       style: TextStyle(
+//                                           color: u.userId == -1
+//                                               ? Colors.amber
+//                                               : Colors.white,
+//                                           fontFamily: 'Poppins',
+//                                           fontSize: 14,
+//                                           fontWeight: u.userId == -1
+//                                               ? FontWeight.w700
+//                                               : FontWeight.w400),
+//                                       overflow: TextOverflow.ellipsis,
+//                                     ),
+//                                   ),
+//                                 ]),
+//                               ))
+//                           .toList(),
+//                       onChanged: (val) =>
+//                           setState(() => _selectedUser = val),
+//                       selectedItemBuilder: (_) => _users
+//                           .map((u) => Row(children: [
+//                                 _userIcon(u),
+//                                 const SizedBox(width: 8),
+//                                 Text(u.userName,
+//                                     style: TextStyle(
+//                                         color: u.userId == -1
+//                                             ? Colors.amber
+//                                             : Colors.white,
+//                                         fontFamily: 'Poppins',
+//                                         fontSize: 13,
+//                                         fontWeight: FontWeight.w600)),
+//                               ]))
+//                           .toList(),
+//                     ),
+//                   ),
+//                 ),
+
+//           const SizedBox(height: 10),
+
+//           // Date + Search
+//           Row(children: [
+//             Expanded(
+//               child: _DateField(
+//                   label: 'From',
+//                   obs: _fromDate,
+//                   onTap: _pickFromDate),
+//             ),
+//             const SizedBox(width: 12),
+//             Expanded(
+//               child: _DateField(
+//                   label: 'To',
+//                   obs: _toDate,
+//                   onTap: _pickToDate),
+//             ),
+//             const SizedBox(width: 12),
+//             Obx(() => ElevatedButton(
+//                   onPressed: widget.ctrl.isLoadingUser.value
+//                       ? null
+//                       : _search,
+//                   style: ElevatedButton.styleFrom(
+//                     backgroundColor: Colors.white,
+//                     foregroundColor: AppTheme.primary,
+//                     minimumSize: const Size(0, 44),
+//                     padding: const EdgeInsets.symmetric(
+//                         horizontal: 16),
+//                   ),
+//                   child: widget.ctrl.isLoadingUser.value
+//                       ? const SizedBox(
+//                           height: 16, width: 16,
+//                           child: CircularProgressIndicator(
+//                               strokeWidth: 2,
+//                               color: AppTheme.primary))
+//                       : const Icon(Icons.search),
+//                 )),
+//           ]),
+//         ]),
+//       ),
+
+//       // ── Summary Card ───────────────────────────────────────
+//       Obx(() {
+//         final records = widget.ctrl.userHistory;
+//         if (records.isEmpty) return const SizedBox();
+//         final activeCount = records
+//             .where((r) =>
+//                 r.sessionStatus == 'Active' || r.isActive)
+//             .length;
+//         final endedCount = records.length - activeCount;
+//         final totalMins  = records.fold<int>(
+//             0, (s, r) => s + _HistoryHelper.calcDurationMins(r));
+//         final h = totalMins ~/ 60;
+//         final m = totalMins % 60;
+//         return Container(
+//           margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+//           padding: const EdgeInsets.all(12),
+//           decoration: AppTheme.cardDecoration(),
+//           child: Row(
+//             mainAxisAlignment: MainAxisAlignment.spaceAround,
+//             children: [
+//               _StatItem(label: 'Total',  value: '${records.length}', color: AppTheme.primary),
+//               _StatItem(label: 'Active', value: '$activeCount',      color: AppTheme.success),
+//               _StatItem(label: 'Ended',  value: '$endedCount',       color: AppTheme.error),
+//               _StatItem(label: 'Hours',  value: '${h}h ${m}m',      color: AppTheme.accent),
+//             ],
+//           ),
+//         );
+//       }),
+
+//       // ── Results ────────────────────────────────────────────
+//       Expanded(
+//         child: Obx(() {
+//           if (widget.ctrl.isLoadingUser.value) return const _Loader();
+//           if (widget.ctrl.errorUser.value.isNotEmpty) {
+//             return _InlineError(
+//                 message: widget.ctrl.errorUser.value,
+//                 onRetry: () {});
+//           }
+//           if (widget.ctrl.userHistory.isEmpty) {
+//             return const _InlineEmpty(
+//               icon: Icons.manage_search_rounded,
+//               message: 'Select user, pick dates, then tap 🔍',
+//             );
+//           }
+//           return ListView.separated(
+//             padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+//             itemCount: widget.ctrl.userHistory.length,
+//             separatorBuilder: (_, __) => const SizedBox(height: 10),
+//             itemBuilder: (_, i) => _HistoryCard(
+//                 record: widget.ctrl.userHistory[i],
+//                 ctrl: widget.ctrl),
+//           );
+//         }),
+//       ),
+//     ]);
+//   }
+// }
+
+// // ─────────────────────────────────────────────
+// //  HELPER
+// // ─────────────────────────────────────────────
+// class _HistoryHelper {
+//   static DateTime? _parse(String? raw) {
+//     if (raw == null || raw.trim().isEmpty) return null;
+//     final s = raw.trim();
+//     try {
+//       if (!s.contains('-') && s.contains(':')) {
+//         final now   = DateTime.now();
+//         final parts = s.split(':');
+//         final h     = int.tryParse(parts[0]) ?? 0;
+//         final m     = int.tryParse(parts[1]) ?? 0;
+//         final sec   = parts.length > 2
+//             ? int.tryParse(parts[2].split('.')[0]) ?? 0
+//             : 0;
+//         return DateTime(now.year, now.month, now.day, h, m, sec);
+//       }
+//       return DateTime.parse(s.replaceFirst(' ', 'T'));
+//     } catch (_) {
+//       return null;
+//     }
+//   }
+
+//   static DateTime? parsePublic(String? raw) => _parse(raw);
+
+//   static int calcDurationMins(LoginHistoryModel record) {
+//     if (record.totalMinutes != null && record.totalMinutes! > 0) {
+//       return record.totalMinutes!;
+//     }
+//     final login = _parse(record.loginTime);
+//     if (login == null) return 0;
+//     final DateTime logout;
+//     final parsedLogout = _parse(record.logoutTime);
+//     if (parsedLogout != null) {
+//       logout = parsedLogout.isBefore(login)
+//           ? parsedLogout.add(const Duration(days: 1))
+//           : parsedLogout;
+//     } else if (record.sessionStatus == 'Active' || record.isActive) {
+//       logout = DateTime.now();
+//     } else {
+//       return 0;
+//     }
+//     return logout.difference(login).inMinutes.clamp(0, 99999);
+//   }
+
+//   static String fmtDuration(int mins) {
+//     if (mins <= 0) return '--';
+//     final h = mins ~/ 60;
+//     final m = mins % 60;
+//     return h == 0 ? '${m}m' : '${h}h ${m}m';
+//   }
+// }
+
+// // ─────────────────────────────────────────────
+// //  HISTORY CARD
+// // ─────────────────────────────────────────────
+// class _HistoryCard extends StatelessWidget {
+//   final LoginHistoryModel      record;
+//   final LoginHistoryController ctrl;
+//   const _HistoryCard({required this.record, required this.ctrl});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     final sessionStatus = record.sessionStatus;
+//     final isActive  = sessionStatus == 'Active'  || record.isActive;
+//     final isExpired = sessionStatus == 'Expired';
+
+//     final statusLabel = isActive  ? 'Active'
+//                       : isExpired ? 'Expired'
+//                       : 'Ended';
+//     final statusColor = isActive  ? AppTheme.success
+//                       : isExpired ? Colors.orange
+//                       : AppTheme.error;
+
+//     // Duration
+//     final String durationText;
+//     if (record.totalDuration != null &&
+//         record.totalDuration!.isNotEmpty) {
+//       durationText = record.totalDuration!;
+//     } else {
+//       final mins = _HistoryHelper.calcDurationMins(record);
+//       durationText = _HistoryHelper.fmtDuration(mins);
+//     }
+
+//     // Login
+//     final loginDate = ctrl.formatDateOnly(record.loginTime);
+//     final loginTime = ctrl.formatTimeOnly(record.loginTime);
+
+//     // Logout
+//     String logoutDate = '';
+//     String logoutTime = '';
+//     if (record.logoutTime != null && record.logoutTime!.isNotEmpty) {
+//       logoutDate = ctrl.formatDateOnly(record.logoutTime!);
+//       logoutTime = ctrl.formatTimeOnly(record.logoutTime!);
+//     } else if (!isActive) {
+//       final loginDt  = _HistoryHelper.parsePublic(record.loginTime);
+//       final totalMin = _HistoryHelper.calcDurationMins(record);
+//       if (loginDt != null && totalMin > 0) {
+//         final calcLogout = loginDt.add(Duration(minutes: totalMin));
+//         logoutDate = DateFormat('dd MMM yyyy').format(calcLogout);
+//         logoutTime = DateFormat('hh:mm a').format(calcLogout);
+//       }
+//     }
+
+//     return Container(
+//       decoration: AppTheme.cardDecoration(),
+//       padding: const EdgeInsets.all(16),
+//       child: Column(
+//         crossAxisAlignment: CrossAxisAlignment.start,
+//         children: [
+
+//           // ── Top Row ──────────────────────────────────────
+//           Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+//             Container(
+//               width: 44, height: 44,
+//               decoration: BoxDecoration(
+//                 gradient: AppTheme.primaryGradientDecoration.gradient,
+//                 borderRadius: BorderRadius.circular(14),
+//               ),
+//               child: Center(
+//                 child: Text(
+//                   record.userName.isNotEmpty
+//                       ? record.userName[0].toUpperCase()
+//                       : 'U',
+//                   style: const TextStyle(
+//                       color: Colors.white,
+//                       fontWeight: FontWeight.w800,
+//                       fontSize: 18,
+//                       fontFamily: 'Poppins'),
+//                 ),
+//               ),
+//             ),
+//             const SizedBox(width: 12),
+//             Expanded(
+//               child: Column(
+//                 crossAxisAlignment: CrossAxisAlignment.start,
+//                 children: [
+//                   Text(record.userName,
+//                       style: const TextStyle(
+//                           fontSize: 14,
+//                           fontWeight: FontWeight.w700,
+//                           fontFamily: 'Poppins',
+//                           color: AppTheme.textPrimary)),
+//                   if (record.role != null && record.role!.isNotEmpty)
+//                     Text(record.role!, style: AppTheme.bodySmall),
+//                 ],
+//               ),
+//             ),
+//             Container(
+//               padding: const EdgeInsets.symmetric(
+//                   horizontal: 9, vertical: 3),
+//               decoration: BoxDecoration(
+//                 color: statusColor.withOpacity(0.12),
+//                 borderRadius: BorderRadius.circular(20),
+//                 border: Border.all(
+//                     color: statusColor.withOpacity(0.3)),
+//               ),
+//               child: Row(mainAxisSize: MainAxisSize.min, children: [
+//                 Container(
+//                     width: 6, height: 6,
+//                     decoration: BoxDecoration(
+//                         color: statusColor,
+//                         shape: BoxShape.circle)),
+//                 const SizedBox(width: 5),
+//                 Text(statusLabel,
+//                     style: TextStyle(
+//                         fontSize: 11,
+//                         fontWeight: FontWeight.w700,
+//                         fontFamily: 'Poppins',
+//                         color: statusColor)),
+//               ]),
+//             ),
+//           ]),
+
+//           const SizedBox(height: 12),
+//           const Divider(height: 1, color: AppTheme.divider),
+//           const SizedBox(height: 12),
+
+//           // ── In / Out / Duration ───────────────────────────
+//           _InOutDurationRow(
+//             loginDate:  loginDate,
+//             loginTime:  loginTime,
+//             logoutDate: logoutDate,
+//             logoutTime: logoutTime,
+//             duration:   durationText,
+//             isActive:   isActive,
+//           ),
+
+//           // ── Logout Reason Badge ───────────────────────────
+//           if (record.logoutReason != null &&
+//               record.logoutReason!.isNotEmpty) ...[
+//             const SizedBox(height: 10),
+//             Container(
+//               padding: const EdgeInsets.symmetric(
+//                   horizontal: 8, vertical: 4),
+//               decoration: BoxDecoration(
+//                 color: ctrl
+//                     .reasonColor(record.logoutReason)
+//                     .withOpacity(0.1),
+//                 borderRadius: BorderRadius.circular(6),
+//                 border: Border.all(
+//                     color: ctrl
+//                         .reasonColor(record.logoutReason)
+//                         .withOpacity(0.3)),
+//               ),
+//               child: Row(mainAxisSize: MainAxisSize.min, children: [
+//                 Icon(ctrl.reasonIcon(record.logoutReason),
+//                     size: 12,
+//                     color: ctrl.reasonColor(record.logoutReason)),
+//                 const SizedBox(width: 5),
+//                 Text(
+//                   ctrl.reasonLabel(record.logoutReason),
+//                   style: TextStyle(
+//                       fontSize: 11,
+//                       fontFamily: 'Poppins',
+//                       fontWeight: FontWeight.w600,
+//                       color: ctrl.reasonColor(record.logoutReason)),
+//                 ),
+//               ]),
+//             ),
+//           ],
+
+//           // ── Platform / Device ─────────────────────────────
+//           if ((record.platform != null &&
+//                   record.platform!.isNotEmpty &&
+//                   record.platform != 'string') ||
+//               (record.deviceId != null &&
+//                   record.deviceId!.isNotEmpty)) ...[
+//             const SizedBox(height: 10),
+//             const Divider(height: 1, color: AppTheme.divider),
+//             const SizedBox(height: 10),
+//           ],
+//           if (record.platform != null &&
+//               record.platform!.isNotEmpty &&
+//               record.platform != 'string')
+//             _DetailRow(
+//                 icon: Icons.phone_android_rounded,
+//                 label: 'Platform',
+//                 value: record.platform!,
+//                 iconColor: AppTheme.chipWFH),
+//           if (record.deviceId != null &&
+//               record.deviceId!.isNotEmpty) ...[
+//             if (record.platform != null &&
+//                 record.platform!.isNotEmpty &&
+//                 record.platform != 'string')
+//               const SizedBox(height: 6),
+//             _DetailRow(
+//               icon: Icons.fingerprint_rounded,
+//               label: 'Device',
+//               value: record.deviceId!.length > 24
+//                   ? '${record.deviceId!.substring(0, 24)}…'
+//                   : record.deviceId!,
+//               iconColor: AppTheme.textSecondary,
+//             ),
+//           ],
+//         ],
+//       ),
+//     );
+//   }
+// }
+
+// // ─────────────────────────────────────────────
+// //  IN / OUT / DURATION ROW
+// // ─────────────────────────────────────────────
+// class _InOutDurationRow extends StatelessWidget {
+//   final String loginDate;
+//   final String loginTime;
+//   final String logoutDate;
+//   final String logoutTime;
+//   final String duration;
+//   final bool   isActive;
+
+//   const _InOutDurationRow({
+//     required this.loginDate,
+//     required this.loginTime,
+//     required this.logoutDate,
+//     required this.logoutTime,
+//     required this.duration,
+//     required this.isActive,
+//   });
+
+//   static const _labelStyle = TextStyle(
+//     fontSize: 10,
+//     color: AppTheme.textSecondary,
+//     fontFamily: 'Poppins',
+//     fontWeight: FontWeight.w500,
+//   );
+//   static const _dateStyle = TextStyle(
+//     fontSize: 10,
+//     fontWeight: FontWeight.w500,
+//     color: AppTheme.textSecondary,
+//     fontFamily: 'Poppins',
+//   );
+//   static const _timeStyle = TextStyle(
+//     fontSize: 12,
+//     fontWeight: FontWeight.w700,
+//     color: AppTheme.textPrimary,
+//     fontFamily: 'Poppins',
+//   );
+//   static const _timeHintStyle = TextStyle(
+//     fontSize: 12,
+//     fontWeight: FontWeight.w700,
+//     color: AppTheme.textHint,
+//     fontFamily: 'Poppins',
+//   );
+
+//   Widget _cell({
+//     required String label,
+//     required String date,
+//     required String time,
+//     required Color  dotColor,
+//     Color? timeColor,
+//   }) {
+//     final hasDate = date.isNotEmpty;
+//     final hasTime = time.isNotEmpty;
+//     return Column(
+//       crossAxisAlignment: CrossAxisAlignment.start,
+//       mainAxisSize: MainAxisSize.min,
+//       children: [
+//         SizedBox(height: 14, child: Text(label, style: _labelStyle)),
+//         const SizedBox(height: 3),
+//         SizedBox(
+//           height: 14,
+//           child: Row(
+//             crossAxisAlignment: CrossAxisAlignment.center,
+//             children: [
+//               Container(
+//                 width: 7, height: 7,
+//                 decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
+//               ),
+//               const SizedBox(width: 5),
+//               Flexible(
+//                 child: Text(
+//                   hasDate ? date : '--',
+//                   style: _dateStyle,
+//                   overflow: TextOverflow.ellipsis,
+//                 ),
+//               ),
+//             ],
+//           ),
+//         ),
+//         const SizedBox(height: 2),
+//         SizedBox(
+//           height: 17,
+//           child: Padding(
+//             padding: const EdgeInsets.only(left: 12),
+//             child: Text(
+//               hasTime ? time : '--:--',
+//               style: (hasDate || hasTime)
+//                   ? (timeColor != null
+//                       ? _timeStyle.copyWith(color: timeColor)
+//                       : _timeStyle)
+//                   : _timeHintStyle,
+//               overflow: TextOverflow.ellipsis,
+//             ),
+//           ),
+//         ),
+//       ],
+//     );
+//   }
+
+//   Widget _durationCell() {
+//     return Column(
+//       crossAxisAlignment: CrossAxisAlignment.start,
+//       mainAxisSize: MainAxisSize.min,
+//       children: [
+//         const SizedBox(height: 14, child: Text('Duration', style: _labelStyle)),
+//         const SizedBox(height: 3),
+//         SizedBox(
+//           height: 14,
+//           child: Row(
+//             crossAxisAlignment: CrossAxisAlignment.center,
+//             children: [
+//               Container(
+//                 width: 7, height: 7,
+//                 decoration: const BoxDecoration(
+//                     color: AppTheme.primary, shape: BoxShape.circle),
+//               ),
+//             ],
+//           ),
+//         ),
+//         const SizedBox(height: 2),
+//         SizedBox(
+//           height: 17,
+//           child: Padding(
+//             padding: const EdgeInsets.only(left: 12),
+//             child: Text(
+//               duration,
+//               style: _timeStyle.copyWith(
+//                   color: isActive ? AppTheme.primary : AppTheme.textPrimary),
+//               overflow: TextOverflow.ellipsis,
+//             ),
+//           ),
+//         ),
+//       ],
+//     );
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Row(
+//       crossAxisAlignment: CrossAxisAlignment.start,
+//       children: [
+//         Expanded(
+//           child: _cell(
+//             label:    'In',
+//             date:     loginDate,
+//             time:     loginTime,
+//             dotColor: AppTheme.success,
+//           ),
+//         ),
+//         Container(
+//           width: 1, height: 50,
+//           margin: const EdgeInsets.symmetric(horizontal: 8),
+//           color: AppTheme.divider,
+//         ),
+//         Expanded(
+//           child: _cell(
+//             label:    'Out',
+//             date:     logoutDate,
+//             time:     logoutTime,
+//             dotColor: isActive ? AppTheme.textHint : AppTheme.error,
+//           ),
+//         ),
+//         Container(
+//           width: 1, height: 50,
+//           margin: const EdgeInsets.symmetric(horizontal: 8),
+//           color: AppTheme.divider,
+//         ),
+//         Expanded(child: _durationCell()),
+//       ],
+//     );
+//   }
+// }
+
+// // ─────────────────────────────────────────────
+// //  STAT ITEM
+// // ─────────────────────────────────────────────
+// class _StatItem extends StatelessWidget {
+//   final String label, value;
+//   final Color  color;
+//   const _StatItem(
+//       {required this.label,
+//       required this.value,
+//       required this.color});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Column(children: [
+//       Text(value,
+//           style: TextStyle(
+//               fontSize: 20,
+//               fontWeight: FontWeight.w700,
+//               color: color,
+//               fontFamily: 'Poppins')),
+//       Text(label, style: AppTheme.caption),
+//     ]);
+//   }
+// }
+
+// // ─────────────────────────────────────────────
+// //  DATE FIELD
+// // ─────────────────────────────────────────────
+// class _DateField extends StatelessWidget {
+//   final String       label;
+//   final Rx<DateTime> obs;
+//   final VoidCallback onTap;
+//   const _DateField(
+//       {required this.label,
+//       required this.obs,
+//       required this.onTap});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Container(
+//       padding: const EdgeInsets.symmetric(
+//           horizontal: 12, vertical: 10),
+//       decoration: BoxDecoration(
+//         color: Colors.white.withOpacity(0.15),
+//         borderRadius: BorderRadius.circular(10),
+//         border: Border.all(color: Colors.white.withOpacity(0.3)),
+//       ),
+//       child: Row(children: [
+//         Expanded(
+//           child: Column(
+//             crossAxisAlignment: CrossAxisAlignment.start,
+//             children: [
+//               Text(label,
+//                   style: TextStyle(
+//                       color: Colors.white.withOpacity(0.8),
+//                       fontSize: 10,
+//                       fontFamily: 'Poppins')),
+//               const SizedBox(height: 2),
+//               Obx(() => Text(AppUtils.formatDate(obs.value),
+//                   style: const TextStyle(
+//                       color: Colors.white,
+//                       fontSize: 12,
+//                       fontWeight: FontWeight.w600,
+//                       fontFamily: 'Poppins'))),
+//             ],
+//           ),
+//         ),
+//         GestureDetector(
+//           onTap: onTap,
+//           child: Icon(Icons.calendar_month_outlined,
+//               size: 18,
+//               color: Colors.white.withOpacity(0.85)),
+//         ),
+//       ]),
+//     );
+//   }
+// }
+
+// // ─────────────────────────────────────────────
+// //  SECTION HEADER
+// // ─────────────────────────────────────────────
+// class _SectionHeader extends StatelessWidget {
+//   final IconData icon;
+//   final String   title;
+//   final Color    color;
+//   final Widget   trailing;
+//   const _SectionHeader({
+//     required this.icon,
+//     required this.title,
+//     required this.color,
+//     required this.trailing,
+//   });
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Padding(
+//       padding: const EdgeInsets.fromLTRB(16, 18, 16, 10),
+//       child: Row(children: [
+//         Container(
+//           padding: const EdgeInsets.all(7),
+//           decoration: BoxDecoration(
+//               color: color.withOpacity(0.1),
+//               borderRadius: BorderRadius.circular(10)),
+//           child: Icon(icon, color: color, size: 16),
+//         ),
+//         const SizedBox(width: 10),
+//         Expanded(
+//           child: Text(title,
+//               style: const TextStyle(
+//                   fontSize: 13,
+//                   fontWeight: FontWeight.w700,
+//                   fontFamily: 'Poppins',
+//                   color: AppTheme.textPrimary),
+//               overflow: TextOverflow.ellipsis),
+//         ),
+//         const SizedBox(width: 8),
+//         trailing,
+//       ]),
+//     );
+//   }
+// }
+
+// // ─────────────────────────────────────────────
+// //  DETAIL ROW
+// // ─────────────────────────────────────────────
+// class _DetailRow extends StatelessWidget {
+//   final IconData icon;
+//   final Color    iconColor;
+//   final String   label, value;
+//   const _DetailRow({
+//     required this.icon,
+//     required this.iconColor,
+//     required this.label,
+//     required this.value,
+//   });
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Row(children: [
+//       Icon(icon, color: iconColor, size: 15),
+//       const SizedBox(width: 7),
+//       Text('$label: ',
+//           style: const TextStyle(
+//               fontSize: 12,
+//               fontFamily: 'Poppins',
+//               color: AppTheme.textSecondary,
+//               fontWeight: FontWeight.w500)),
+//       Expanded(
+//         child: Text(value,
+//             style: const TextStyle(
+//                 fontSize: 12,
+//                 fontFamily: 'Poppins',
+//                 color: AppTheme.textPrimary,
+//                 fontWeight: FontWeight.w600),
+//             overflow: TextOverflow.ellipsis),
+//       ),
+//     ]);
+//   }
+// }
+
+// // ─────────────────────────────────────────────
+// //  UTILITY WIDGETS
+// // ─────────────────────────────────────────────
+// class _Loader extends StatelessWidget {
+//   const _Loader();
+//   @override
+//   Widget build(BuildContext context) => const Center(
+//       child: CircularProgressIndicator(color: AppTheme.primary));
+// }
+
+// class _InlineLoader extends StatelessWidget {
+//   const _InlineLoader();
+//   @override
+//   Widget build(BuildContext context) => const SizedBox(
+//       width: 14, height: 14,
+//       child: CircularProgressIndicator(
+//           strokeWidth: 2, color: AppTheme.primary));
+// }
+
+// class _InlineEmpty extends StatelessWidget {
+//   final IconData icon;
+//   final String   message;
+//   const _InlineEmpty({required this.icon, required this.message});
+//   @override
+//   Widget build(BuildContext context) => Padding(
+//         padding: const EdgeInsets.symmetric(vertical: 40),
+//         child: Center(
+//           child: Column(
+//             mainAxisAlignment: MainAxisAlignment.center,
+//             children: [
+//               Icon(icon, size: 56, color: AppTheme.textHint),
+//               const SizedBox(height: 14),
+//               Text(message,
+//                   textAlign: TextAlign.center,
+//                   style: const TextStyle(
+//                       fontFamily: 'Poppins',
+//                       fontSize: 13,
+//                       color: AppTheme.textSecondary)),
+//             ],
+//           ),
+//         ),
+//       );
+// }
+
+// class _InlineError extends StatelessWidget {
+//   final String       message;
+//   final VoidCallback onRetry;
+//   const _InlineError({required this.message, required this.onRetry});
+//   @override
+//   Widget build(BuildContext context) => Padding(
+//         padding: const EdgeInsets.symmetric(
+//             horizontal: 16, vertical: 12),
+//         child: Container(
+//           padding: const EdgeInsets.all(14),
+//           decoration: BoxDecoration(
+//               color: AppTheme.errorLight,
+//               borderRadius: BorderRadius.circular(12)),
+//           child: Row(children: [
+//             const Icon(Icons.error_outline_rounded,
+//                 color: AppTheme.error, size: 18),
+//             const SizedBox(width: 10),
+//             Expanded(
+//               child: Text(message,
+//                   style: const TextStyle(
+//                       fontFamily: 'Poppins',
+//                       fontSize: 12,
+//                       color: AppTheme.error)),
+//             ),
+//             GestureDetector(
+//               onTap: onRetry,
+//               child: const Padding(
+//                 padding: EdgeInsets.only(left: 8),
+//                 child: Icon(Icons.refresh_rounded,
+//                     color: AppTheme.error, size: 18),
+//               ),
+//             ),
+//           ]),
+//         ),
+//       );
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // lib/screens/login/login_history_screen.dart
 
 import 'package:flutter/material.dart';
@@ -2797,15 +5227,35 @@ class _LoginHistoryScreenState extends State<LoginHistoryScreen>
 }
 
 // ─────────────────────────────────────────────
-//  MY HISTORY TAB  — only today's sessions, no filter
+//  MY HISTORY TAB  — only today's sessions
 // ─────────────────────────────────────────────
 class _MyHistoryTab extends StatelessWidget {
   final LoginHistoryController ctrl;
   const _MyHistoryTab({required this.ctrl});
 
+  /// ✅ Client-side filter: strictly only records where loginTime date == today
+  /// Guards against API returning records from other dates
+  List<LoginHistoryModel> _todayOnly(List<LoginHistoryModel> all) {
+    final now = DateTime.now();
+    return all.where((r) {
+      if (r.loginTime == null || r.loginTime!.isEmpty) return false;
+      try {
+        final dt = DateTime.parse(r.loginTime!).toLocal();
+        return dt.year == now.year &&
+               dt.month == now.month &&
+               dt.day == now.day;
+      } catch (_) {
+        return false;
+      }
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      // ✅ Always filter — only today's date records shown
+      final todayRecords = _todayOnly(ctrl.todayHistory);
+
       return RefreshIndicator(
         color: AppTheme.primary,
         onRefresh: () async => ctrl.fetchTodayHistory(),
@@ -2817,12 +5267,12 @@ class _MyHistoryTab extends StatelessWidget {
             SliverToBoxAdapter(
               child: _SectionHeader(
                 icon: Icons.today_rounded,
-                title: "Today's Sessions",
+                title: "Today's Sessions  (${DateFormat('dd MMM yyyy').format(DateTime.now())})",
                 color: AppTheme.success,
                 trailing: ctrl.isLoadingToday.value
                     ? const _InlineLoader()
                     : Text(
-                        '${ctrl.todayHistory.length} session${ctrl.todayHistory.length == 1 ? '' : 's'}',
+                        '${todayRecords.length} session${todayRecords.length == 1 ? '' : 's'}',
                         style: AppTheme.caption),
               ),
             ),
@@ -2837,7 +5287,7 @@ class _MyHistoryTab extends StatelessWidget {
                     message: ctrl.errorToday.value,
                     onRetry: ctrl.fetchTodayHistory),
               )
-            else if (ctrl.todayHistory.isEmpty)
+            else if (todayRecords.isEmpty)
               const SliverToBoxAdapter(
                 child: _InlineEmpty(
                     icon: Icons.login_rounded,
@@ -2851,9 +5301,9 @@ class _MyHistoryTab extends StatelessWidget {
                     (_, i) => Padding(
                       padding: const EdgeInsets.only(bottom: 10),
                       child: _HistoryCard(
-                          record: ctrl.todayHistory[i], ctrl: ctrl),
+                          record: todayRecords[i], ctrl: ctrl),
                     ),
-                    childCount: ctrl.todayHistory.length,
+                    childCount: todayRecords.length,
                   ),
                 ),
               ),
@@ -2863,6 +5313,18 @@ class _MyHistoryTab extends StatelessWidget {
     });
   }
 }
+
+// ─────────────────────────────────────────────
+//  SENTINEL for "All Users" selection
+// ─────────────────────────────────────────────
+/// userId = -1 is the sentinel value that means "All Users".
+final _allUsersOption = UserModel(
+  userId:   -1,
+  userName: 'All Users',
+  email:    '',
+  role:     '',
+  isActive: true,
+);
 
 // ─────────────────────────────────────────────
 //  USER LOOKUP TAB
@@ -2884,8 +5346,11 @@ class _UserLookupTabState extends State<_UserLookupTab>
   bool            _loadingUsers = true;
   UserModel?      _selectedUser;
 
-  final Rx<DateTime> _fromDate = DateTime.now().obs;
-  final Rx<DateTime> _toDate   = DateTime.now().obs;
+  // ✅ From = 1st of current month, To = today
+  final Rx<DateTime> _fromDate = DateTime(
+          DateTime.now().year, DateTime.now().month, 1)
+      .obs;
+  final Rx<DateTime> _toDate = DateTime.now().obs;
 
   @override
   void initState() {
@@ -2898,8 +5363,11 @@ class _UserLookupTabState extends State<_UserLookupTab>
     try {
       final list = await ApiService.getAllUsers();
       setState(() {
-        _users        = list;
+        // ✅ Prepend "All Users" option at top of list
+        _users        = [_allUsersOption, ...list];
         _loadingUsers = false;
+        // ✅ Auto-select "All Users" by default
+        _selectedUser = _allUsersOption;
       });
     } catch (_) {
       setState(() => _loadingUsers = false);
@@ -2985,11 +5453,28 @@ class _UserLookupTabState extends State<_UserLookupTab>
       );
       return;
     }
-    widget.ctrl.fetchUserHistory(
-      _selectedUser!.userId,
-      from: _fromDate.value,
-      to:   _toDate.value,
-    );
+
+    // ✅ If "All Users" selected (sentinel userId == -1), fetch all
+    if (_selectedUser!.userId == -1) {
+      widget.ctrl.fetchAllUsersHistory(
+        from: _fromDate.value,
+        to:   _toDate.value,
+      );
+    } else {
+      widget.ctrl.fetchUserHistory(
+        _selectedUser!.userId,
+        from: _fromDate.value,
+        to:   _toDate.value,
+      );
+    }
+  }
+
+  /// Icon for dropdown items — "All Users" gets a group icon
+  Widget _userIcon(UserModel u) {
+    if (u.userId == -1) {
+      return const Icon(Icons.group_rounded, color: Colors.white70, size: 18);
+    }
+    return const Icon(Icons.person_rounded, color: Colors.white70, size: 18);
   }
 
   @override
@@ -3059,30 +5544,47 @@ class _UserLookupTabState extends State<_UserLookupTab>
                       items: _users
                           .map((u) => DropdownMenuItem<UserModel>(
                                 value: u,
-                                child: Text(u.userName,
-                                    style: const TextStyle(
-                                        color: Colors.white,
-                                        fontFamily: 'Poppins',
-                                        fontSize: 14),
-                                    overflow:
-                                        TextOverflow.ellipsis),
+                                child: Row(children: [
+                                  // ✅ "All Users" gets a distinct group icon
+                                  if (u.userId == -1)
+                                    const Icon(Icons.group_rounded,
+                                        color: Colors.amber, size: 16)
+                                  else
+                                    const Icon(Icons.person_outline_rounded,
+                                        color: Colors.white70, size: 16),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      u.userName,
+                                      style: TextStyle(
+                                          color: u.userId == -1
+                                              ? Colors.amber
+                                              : Colors.white,
+                                          fontFamily: 'Poppins',
+                                          fontSize: 14,
+                                          fontWeight: u.userId == -1
+                                              ? FontWeight.w700
+                                              : FontWeight.w400),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ]),
                               ))
                           .toList(),
                       onChanged: (val) =>
                           setState(() => _selectedUser = val),
                       selectedItemBuilder: (_) => _users
                           .map((u) => Row(children: [
-                                const Icon(Icons.person_rounded,
-                                    color: Colors.white70,
-                                    size: 18),
+                                _userIcon(u),
                                 const SizedBox(width: 8),
                                 Text(u.userName,
-                                    style: const TextStyle(
-                                        color: Colors.white,
+                                    style: TextStyle(
+                                        color: u.userId == -1
+                                            ? Colors.amber
+                                            : Colors.white,
                                         fontFamily: 'Poppins',
                                         fontSize: 13,
-                                        fontWeight:
-                                            FontWeight.w600)),
+                                        fontWeight: FontWeight.w600)),
                               ]))
                           .toList(),
                     ),
@@ -3452,8 +5954,6 @@ class _HistoryCard extends StatelessWidget {
 
 // ─────────────────────────────────────────────
 //  IN / OUT / DURATION ROW
-//  Uses fixed SizedBox heights on every line so all 3 columns
-//  are guaranteed to stay pixel-perfectly aligned.
 // ─────────────────────────────────────────────
 class _InOutDurationRow extends StatelessWidget {
   final String loginDate;
@@ -3510,10 +6010,8 @@ class _InOutDurationRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        // ── Row A: label ──
         SizedBox(height: 14, child: Text(label, style: _labelStyle)),
         const SizedBox(height: 3),
-        // ── Row B: dot + date ──
         SizedBox(
           height: 14,
           child: Row(
@@ -3535,7 +6033,6 @@ class _InOutDurationRow extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 2),
-        // ── Row C: time ──
         SizedBox(
           height: 17,
           child: Padding(
@@ -3560,10 +6057,8 @@ class _InOutDurationRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        // ── Row A: label ──
         const SizedBox(height: 14, child: Text('Duration', style: _labelStyle)),
         const SizedBox(height: 3),
-        // ── Row B: dot + empty (same height as date row) ──
         SizedBox(
           height: 14,
           child: Row(
@@ -3578,7 +6073,6 @@ class _InOutDurationRow extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 2),
-        // ── Row C: duration value ──
         SizedBox(
           height: 17,
           child: Padding(
@@ -3738,13 +6232,16 @@ class _SectionHeader extends StatelessWidget {
           child: Icon(icon, color: color, size: 16),
         ),
         const SizedBox(width: 10),
-        Text(title,
-            style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                fontFamily: 'Poppins',
-                color: AppTheme.textPrimary)),
-        const Spacer(),
+        Expanded(
+          child: Text(title,
+              style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'Poppins',
+                  color: AppTheme.textPrimary),
+              overflow: TextOverflow.ellipsis),
+        ),
+        const SizedBox(width: 8),
         trailing,
       ]),
     );

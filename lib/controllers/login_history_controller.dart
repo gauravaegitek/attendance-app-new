@@ -335,6 +335,237 @@
 
 
 
+// // lib/controllers/login_history_controller.dart
+
+// import 'package:flutter/material.dart';
+// import 'package:get/get.dart';
+// import 'package:intl/intl.dart';
+
+// import '../models/login_history_model.dart';
+// import '../services/api_service.dart';
+
+// class LoginHistoryController extends GetxController {
+
+//   final RxList<LoginHistoryModel> myHistory    = <LoginHistoryModel>[].obs;
+//   final RxList<LoginHistoryModel> todayHistory = <LoginHistoryModel>[].obs;
+//   final RxList<LoginHistoryModel> userHistory  = <LoginHistoryModel>[].obs;
+
+//   final RxBool isLoadingMy    = false.obs;
+//   final RxBool isLoadingToday = false.obs;
+//   final RxBool isLoadingUser  = false.obs;
+
+//   final RxString errorMy    = ''.obs;
+//   final RxString errorToday = ''.obs;
+//   final RxString errorUser  = ''.obs;
+
+//   final Rx<DateTime?> fromDate = Rx<DateTime?>(null);
+//   final Rx<DateTime?> toDate   = Rx<DateTime?>(null);
+
+//   static final _queryFmt = DateFormat('yyyy-MM-dd');
+
+//   @override
+//   void onInit() {
+//     super.onInit();
+//     fetchTodayHistory();
+//     fetchMyHistory();
+//   }
+
+//   Future<void> fetchTodayHistory() async {
+//     isLoadingToday.value = true;
+//     errorToday.value     = '';
+//     try {
+//       todayHistory.value = await ApiService.getTodayLoginHistory();
+//     } catch (e) {
+//       errorToday.value = e.toString();
+//     } finally {
+//       isLoadingToday.value = false;
+//     }
+//   }
+
+//   Future<void> fetchMyHistory({DateTime? from, DateTime? to}) async {
+//     isLoadingMy.value = true;
+//     errorMy.value     = '';
+//     try {
+//       final f = from ?? fromDate.value;
+//       final t = to   ?? toDate.value;
+//       myHistory.value = await ApiService.getMyLoginHistory(
+//         fromDate: f != null ? _queryFmt.format(f) : null,
+//         toDate:   t != null ? _queryFmt.format(t) : null,
+//       );
+//     } catch (e) {
+//       errorMy.value = e.toString();
+//     } finally {
+//       isLoadingMy.value = false;
+//     }
+//   }
+
+//   Future<void> fetchUserHistory(
+//     int userId, {
+//     DateTime? from,
+//     DateTime? to,
+//   }) async {
+//     isLoadingUser.value = true;
+//     errorUser.value     = '';
+//     userHistory.clear();
+//     try {
+//       userHistory.value = await ApiService.getUserLoginHistory(
+//         userId:   userId,
+//         fromDate: from != null ? _queryFmt.format(from) : null,
+//         toDate:   to   != null ? _queryFmt.format(to)   : null,
+//       );
+//     } catch (e) {
+//       errorUser.value = e.toString();
+//     } finally {
+//       isLoadingUser.value = false;
+//     }
+//   }
+
+//   void applyDateFilter(DateTime? from, DateTime? to) {
+//     fromDate.value = from;
+//     toDate.value   = to;
+//     fetchMyHistory(from: from, to: to);
+//   }
+
+//   void clearDateFilter() {
+//     fromDate.value = null;
+//     toDate.value   = null;
+//     fetchMyHistory();
+//   }
+
+//   // ─────────────────────────────────────────────────────────────────
+//   //  FORMAT METHODS
+//   // ─────────────────────────────────────────────────────────────────
+
+//   /// Full datetime: "01 Mar 2026  03:47 PM"
+//   String formatLoginTime(String raw) {
+//     if (raw.isEmpty || raw == '--') return '--';
+//     try {
+//       final dt = DateTime.parse(raw).toLocal();
+//       return DateFormat('dd MMM yyyy  hh:mm a').format(dt);
+//     } catch (_) {
+//       try {
+//         final parts = raw.split(':');
+//         if (parts.length >= 2) {
+//           final now = DateTime.now();
+//           final dt  = DateTime(now.year, now.month, now.day,
+//               int.parse(parts[0]), int.parse(parts[1]));
+//           return DateFormat('hh:mm a').format(dt);
+//         }
+//       } catch (_) {}
+//       return raw;
+//     }
+//   }
+
+//   /// Date only: "01 Mar 2026"
+//   String formatDateOnly(String raw) {
+//     if (raw.isEmpty || raw == '--') return '--';
+//     try {
+//       final dt = DateTime.parse(raw).toLocal();
+//       return DateFormat('dd MMM yyyy').format(dt);
+//     } catch (_) {
+//       return '--';
+//     }
+//   }
+
+//   /// Time only: "03:47 PM"
+//   String formatTimeOnly(String raw) {
+//     if (raw.isEmpty || raw == '--') return '--:--';
+//     try {
+//       final dt = DateTime.parse(raw).toLocal();
+//       return DateFormat('hh:mm a').format(dt);
+//     } catch (_) {
+//       try {
+//         final parts = raw.split(':');
+//         if (parts.length >= 2) {
+//           final now = DateTime.now();
+//           final dt  = DateTime(now.year, now.month, now.day,
+//               int.parse(parts[0]), int.parse(parts[1]));
+//           return DateFormat('hh:mm a').format(dt);
+//         }
+//       } catch (_) {}
+//       return '--:--';
+//     }
+//   }
+
+//   String formatShortTime(String raw) {
+//     if (raw.isEmpty) return '--';
+//     try {
+//       final dt = DateTime.parse(raw).toLocal();
+//       return DateFormat('hh:mm a').format(dt);
+//     } catch (_) {
+//       return '--';
+//     }
+//   }
+
+//   String formatDate(String raw) {
+//     if (raw.isEmpty) return '--';
+//     try {
+//       final dt = DateTime.parse(raw).toLocal();
+//       return DateFormat('dd MMM yyyy').format(dt);
+//     } catch (_) {
+//       return '--';
+//     }
+//   }
+
+//   // ─────────────────────────────────────────────────────────────────
+//   //  STATUS & REASON HELPERS
+//   // ─────────────────────────────────────────────────────────────────
+
+//   Color statusColor(LoginHistoryModel record) {
+//     switch (record.sessionStatus) {
+//       case 'Active':    return const Color(0xFF22C55E);
+//       case 'Expired':   return const Color(0xFFF97316);
+//       case 'LoggedOut': return const Color(0xFF94A3B8);
+//       default:
+//         return record.isActive
+//             ? const Color(0xFF22C55E)
+//             : const Color(0xFF94A3B8);
+//     }
+//   }
+
+//   String reasonLabel(String? reason) {
+//     switch (reason) {
+//       case 'manual':          return 'Manual Logout';
+//       case 'expired':         return 'Session Expired';
+//       case 'device_cleared':  return 'Device Cleared';
+//       case 'token_mismatch':  return 'Token Mismatch';
+//       case 'device_mismatch': return 'Device Mismatch';
+//       default:                return reason ?? '';
+//     }
+//   }
+
+//   Color reasonColor(String? reason) {
+//     switch (reason) {
+//       case 'manual':          return const Color(0xFF22C55E);
+//       case 'expired':         return const Color(0xFFF97316);
+//       case 'device_cleared':  return const Color(0xFFEF4444);
+//       case 'token_mismatch':  return const Color(0xFF8B5CF6);
+//       case 'device_mismatch': return const Color(0xFFEC4899);
+//       default:                return const Color(0xFF94A3B8);
+//     }
+//   }
+
+//   IconData reasonIcon(String? reason) {
+//     switch (reason) {
+//       case 'manual':          return Icons.logout_rounded;
+//       case 'expired':         return Icons.timer_off_rounded;
+//       case 'device_cleared':  return Icons.phonelink_erase_rounded;
+//       case 'token_mismatch':  return Icons.sync_problem_rounded;
+//       case 'device_mismatch': return Icons.devices_other_rounded;
+//       default:                return Icons.info_outline_rounded;
+//     }
+//   }
+// }
+
+
+
+
+
+
+
+
+
+
 // lib/controllers/login_history_controller.dart
 
 import 'package:flutter/material.dart';
@@ -419,6 +650,66 @@ class LoginHistoryController extends GetxController {
       isLoadingUser.value = false;
     }
   }
+
+  // ─────────────────────────────────────────────────────────────────
+  //  ALL USERS HISTORY  (called when "All Users" option is selected)
+  // ─────────────────────────────────────────────────────────────────
+
+  /// Fetches login history for every user within [from] → [to] date range.
+  /// Results from all users are merged and sorted by loginTime descending.
+  Future<void> fetchAllUsersHistory({
+    required DateTime from,
+    required DateTime to,
+  }) async {
+    isLoadingUser.value = true;
+    errorUser.value     = '';
+    userHistory.clear();
+    try {
+      // ── Option A ─────────────────────────────────────────────────
+      // If your API has a dedicated endpoint that returns all users'
+      // history in one call, use that (fastest):
+      //
+      // final records = await ApiService.getAllUsersLoginHistory(
+      //   fromDate: _queryFmt.format(from),
+      //   toDate:   _queryFmt.format(to),
+      // );
+      // userHistory.assignAll(records);
+
+      // ── Option B ─────────────────────────────────────────────────
+      // Parallel fetch per user, then merge & sort (use if no
+      // dedicated endpoint exists):
+      final allUsers = await ApiService.getAllUsers();
+
+      // fire all requests in parallel
+      final futures = allUsers.map(
+        (u) => ApiService.getUserLoginHistory(
+          userId:   u.userId,
+          fromDate: _queryFmt.format(from),
+          toDate:   _queryFmt.format(to),
+        ).catchError((_) => <LoginHistoryModel>[]),   // skip failed users
+      );
+
+      final results = await Future.wait(futures);
+
+      // flatten + sort newest-first
+      final merged = results
+          .expand((list) => list)
+          .toList()
+        ..sort((a, b) {
+          final dtA = DateTime.tryParse(a.loginTime ?? '') ?? DateTime(0);
+          final dtB = DateTime.tryParse(b.loginTime ?? '') ?? DateTime(0);
+          return dtB.compareTo(dtA); // descending
+        });
+
+      userHistory.assignAll(merged);
+    } catch (e) {
+      errorUser.value = e.toString();
+    } finally {
+      isLoadingUser.value = false;
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────
 
   void applyDateFilter(DateTime? from, DateTime? to) {
     fromDate.value = from;
