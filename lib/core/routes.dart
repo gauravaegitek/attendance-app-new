@@ -1555,12 +1555,205 @@
 
 
 
+// // lib/core/routes.dart
+
+// import 'package:get/get.dart';
+// import '../controllers/asset_controller.dart';
+// import '../controllers/auth_controller.dart';
+// import '../controllers/daily_task_controller.dart';
+// import '../controllers/leave_controller.dart';
+// import '../controllers/login_history_controller.dart';
+// import '../controllers/performance_controller.dart';
+// import '../controllers/wfh_controller.dart';
+// import '../controllers/notification_controller.dart';
+// import '../screens/splash_screen.dart';
+// import '../screens/auth/login_screen.dart';
+// import '../screens/auth/register_screen.dart';
+// import '../screens/attendance/home_screen.dart';
+// import '../screens/attendance/mark_attendance_screen.dart';
+// import '../screens/attendance/user_summary_screen.dart';
+// import '../screens/attendance/holiday_screen.dart';
+// import '../screens/admin/admin_screen.dart';
+// import '../screens/profile/profile_screen.dart';
+// import '../screens/performance/performance_dashboard_screen.dart';
+// import '../screens/performance/ranking_screen.dart';
+// import '../screens/performance/reviews_screen.dart';
+// import '../screens/performance/my_reviews_screen.dart';
+// import '../screens/wfh/my_wfh_screen.dart';
+// import '../screens/wfh/wfh_admin_screen.dart';
+// import '../screens/auth/session_expired_screen.dart';
+// import '../screens/notification/notification_screen.dart';
+// import '../screens/help_support/help_support_screen.dart';
+// import '../screens/leave/leave_screen.dart';
+// import '../screens/daily_task/daily_task_screen.dart';
+// import '../screens/login/login_history_screen.dart';
+// import '../screens/asset/my_asset_screen.dart';       // ✅ NEW
+// import '../screens/asset/asset_admin_screen.dart';    // ✅ NEW
+
+// class AppRoutes {
+//   static const String splash               = '/';
+//   static const String login                = '/login';
+//   static const String register             = '/register';
+//   static const String home                 = '/home';
+//   static const String markIn               = '/mark-in';
+//   static const String markOut              = '/mark-out';
+//   static const String userSummary          = '/user-summary';
+//   static const String admin                = '/admin';
+//   static const String holidays             = '/holidays';
+//   static const String profile              = '/profile';
+//   static const String performance          = '/performance';
+//   static const String performanceRanking   = '/performance/ranking';
+//   static const String performanceReviews   = '/performance/reviews';
+//   static const String performanceMyReviews = '/performance/my-reviews';
+//   static const String wfh                  = '/wfh';
+//   static const String wfhAdmin             = '/wfh-admin';
+//   static const String sessionExpired       = '/session-expired';
+//   static const String notifications        = '/notifications';
+//   static const String helpSupport          = '/help-support';
+//   static const String leave                = '/leave';
+//   static const String dailyTask            = '/daily-tasks';
+//   static const String loginHistory         = '/login-history';
+//   static const String myAssets             = '/my-assets';    // ✅ NEW
+//   static const String assetAdmin           = '/asset-admin';  // ✅ NEW
+
+//   static List<GetPage> pages = [
+//     GetPage(name: splash, page: () => const SplashScreen()),
+//     GetPage(
+//       name: login,
+//       page: () => const LoginScreen(),
+//       binding: BindingsBuilder(() => Get.put(AuthController())),
+//     ),
+//     GetPage(name: register, page: () => const RegisterScreen()),
+//     GetPage(
+//       name: home,
+//       page: () => const HomeScreen(),
+//       binding: BindingsBuilder(() {
+//         if (!Get.isRegistered<AuthController>())         Get.put(AuthController());
+//         if (!Get.isRegistered<WfhController>())          Get.put(WfhController());
+//         if (!Get.isRegistered<NotificationController>()) Get.put(NotificationController(), permanent: true);
+//         if (!Get.isRegistered<DailyTaskController>())    Get.put(DailyTaskController(), permanent: true);
+//       }),
+//     ),
+//     GetPage(name: markIn,      page: () => const MarkAttendanceScreen(isMarkIn: true)),
+//     GetPage(name: markOut,     page: () => const MarkAttendanceScreen(isMarkIn: false)),
+//     GetPage(name: userSummary, page: () => const UserSummaryScreen()),
+//     GetPage(name: holidays,    page: () => const HolidayScreen()),
+//     GetPage(name: admin,       page: () => const AdminScreen()),
+//     GetPage(name: profile,     page: () => const ProfileScreen()),
+//     GetPage(
+//       name: performance,
+//       page: () => const PerformanceDashboardScreen(),
+//       binding: BindingsBuilder(() {
+//         if (!Get.isRegistered<PerformanceController>()) Get.put(PerformanceController());
+//       }),
+//     ),
+//     GetPage(
+//       name: performanceRanking,
+//       page: () => const RankingScreen(),
+//       binding: BindingsBuilder(() {
+//         if (!Get.isRegistered<PerformanceController>()) Get.put(PerformanceController());
+//       }),
+//     ),
+//     GetPage(
+//       name: performanceReviews,
+//       page: () => const ReviewsScreen(),
+//       binding: BindingsBuilder(() {
+//         if (!Get.isRegistered<PerformanceController>()) Get.put(PerformanceController());
+//       }),
+//     ),
+//     GetPage(
+//       name: performanceMyReviews,
+//       page: () => const MyReviewsScreen(),
+//       binding: BindingsBuilder(() {
+//         if (!Get.isRegistered<PerformanceController>()) Get.put(PerformanceController());
+//       }),
+//     ),
+//     GetPage(
+//       name: wfh,
+//       page: () => const MyWfhScreen(),
+//       binding: BindingsBuilder(() {
+//         if (!Get.isRegistered<WfhController>()) Get.put(WfhController());
+//       }),
+//     ),
+//     GetPage(
+//       name: wfhAdmin,
+//       page: () => const WfhAdminScreen(),
+//       binding: BindingsBuilder(() {
+//         if (!Get.isRegistered<WfhController>()) Get.put(WfhController());
+//       }),
+//     ),
+//     GetPage(
+//       name: sessionExpired,
+//       page: () => const SessionExpiredScreen(),
+//       transition: Transition.fade,
+//     ),
+//     GetPage(
+//       name: notifications,
+//       page: () => const NotificationScreen(),
+//       binding: BindingsBuilder(() {
+//         if (!Get.isRegistered<NotificationController>()) Get.put(NotificationController());
+//       }),
+//     ),
+//     GetPage(name: helpSupport, page: () => const HelpSupportScreen()),
+//     GetPage(
+//       name: leave,
+//       page: () => const LeaveScreen(),
+//       binding: BindingsBuilder(() {
+//         if (!Get.isRegistered<LeaveController>()) Get.put(LeaveController());
+//       }),
+//     ),
+//     GetPage(
+//       name: dailyTask,
+//       page: () => const DailyTaskScreen(),
+//       binding: BindingsBuilder(() {
+//         if (!Get.isRegistered<DailyTaskController>()) Get.put(DailyTaskController());
+//       }),
+//     ),
+//     GetPage(
+//       name: loginHistory,
+//       page: () => const LoginHistoryScreen(),
+//       binding: BindingsBuilder(() {
+//         if (!Get.isRegistered<LoginHistoryController>()) Get.put(LoginHistoryController());
+//       }),
+//     ),
+
+//     // ✅ Asset Routes
+//     GetPage(
+//       name: myAssets,
+//       page: () => const MyAssetScreen(),
+//       binding: BindingsBuilder(() {
+//         if (!Get.isRegistered<AssetController>()) Get.put(AssetController());
+//       }),
+//     ),
+//     GetPage(
+//       name: assetAdmin,
+//       page: () => const AssetAdminScreen(),
+//       binding: BindingsBuilder(() {
+//         if (!Get.isRegistered<AssetController>()) Get.put(AssetController());
+//       }),
+//     ),
+//   ];
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
 // lib/core/routes.dart
 
 import 'package:get/get.dart';
 import '../controllers/asset_controller.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/daily_task_controller.dart';
+import '../controllers/document_controller.dart';         // ✅ NEW
 import '../controllers/leave_controller.dart';
 import '../controllers/login_history_controller.dart';
 import '../controllers/performance_controller.dart';
@@ -1587,8 +1780,9 @@ import '../screens/help_support/help_support_screen.dart';
 import '../screens/leave/leave_screen.dart';
 import '../screens/daily_task/daily_task_screen.dart';
 import '../screens/login/login_history_screen.dart';
-import '../screens/asset/my_asset_screen.dart';       // ✅ NEW
-import '../screens/asset/asset_admin_screen.dart';    // ✅ NEW
+import '../screens/asset/my_asset_screen.dart';
+import '../screens/asset/asset_admin_screen.dart';
+import '../screens/document/document_screen.dart';        // ✅ NEW
 
 class AppRoutes {
   static const String splash               = '/';
@@ -1613,8 +1807,9 @@ class AppRoutes {
   static const String leave                = '/leave';
   static const String dailyTask            = '/daily-tasks';
   static const String loginHistory         = '/login-history';
-  static const String myAssets             = '/my-assets';    // ✅ NEW
-  static const String assetAdmin           = '/asset-admin';  // ✅ NEW
+  static const String myAssets             = '/my-assets';
+  static const String assetAdmin           = '/asset-admin';
+  static const String documents            = '/documents';  // ✅ NEW
 
   static List<GetPage> pages = [
     GetPage(name: splash, page: () => const SplashScreen()),
@@ -1717,7 +1912,7 @@ class AppRoutes {
       }),
     ),
 
-    // ✅ Asset Routes
+    // Asset Routes
     GetPage(
       name: myAssets,
       page: () => const MyAssetScreen(),
@@ -1730,6 +1925,15 @@ class AppRoutes {
       page: () => const AssetAdminScreen(),
       binding: BindingsBuilder(() {
         if (!Get.isRegistered<AssetController>()) Get.put(AssetController());
+      }),
+    ),
+
+    // ✅ Document Route
+    GetPage(
+      name: documents,
+      page: () => const DocumentScreen(),
+      binding: BindingsBuilder(() {
+        if (!Get.isRegistered<DocumentController>()) Get.put(DocumentController());
       }),
     ),
   ];
